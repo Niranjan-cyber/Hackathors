@@ -8,3 +8,9 @@ def extract_text_from_pdf(pdf_path):
             if text:
                 all_text += text + "\n"
     return all_text
+
+def clean_text(text):
+    lines = text.splitlines()
+    cleaned = [line.strip() for line in lines if len(line.strip()) > 10]
+    return " ".join(cleaned)
+
