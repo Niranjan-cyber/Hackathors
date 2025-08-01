@@ -1,5 +1,0 @@
-PyMuPDF
-nltk
-bertopic
-umap-learn
-hdbscan
