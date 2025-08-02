@@ -1,0 +1,3 @@
+# This is a placeholder for the hover sound effect
+# In a real implementation, you would replace this with an actual MP3 file
+# For now, the Button component will handle missing sound files gracefully
