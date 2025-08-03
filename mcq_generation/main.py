@@ -134,8 +134,9 @@ def main():
         if parsed_json and validate_json(parsed_json):
             log("Returning the JSON...")
             return parsed_json
-        log(f"Reprompting...")
+        log("Reprompting...")
         tries += 1
+    log("Failed to obtain valid JSON object within the maximum tries...")
 
 
 if __name__ == "__main__":
