@@ -2,9 +2,9 @@ from prompt import prompt_func
 import requests
 import json
 
+# @prathamesh This should be the format of response from frontend
 USER_INPUT = {
-    "text": "...",
-    "topics": [],
+    "topics": ["Bias Variance trade-off", "Evaluation metrics for machine learning"],
     "difficulty": "medium",
     "num_questions": 5,
 }
@@ -12,13 +12,14 @@ TIMEOUT = 20
 MAX_TRIES = 3
 MODEL_NAME = "openhermes"
 OLLAMA_URL = "http://localhost:11434/api/generate"
+PATH_TO_TEXT = "../OCR_text.txt"
 
 
 def log(text):
     print(f"{__name__} - {text}")
 
 
-def ollama_prompt():
+def ollama_prompt(input_dict):
     log("Sending request to OLLAMA API...")
     try:
         response = requests.post(
@@ -26,16 +27,18 @@ def ollama_prompt():
             json={
                 "model": MODEL_NAME,
                 "prompt": prompt_func(
-                    USER_INPUT["text"],
-                    USER_INPUT["topics"],
-                    USER_INPUT["difficulty"],
-                    USER_INPUT["num_questions"],
+                    input_dict["text"],
+                    input_dict["topics"],
+                    input_dict["difficulty"],
+                    input_dict["num_questions"],
                 ),
                 "stream": False,
             },
             timeout=TIMEOUT,
         )
+        response.raise_for_status()
         result = response.json()["response"]
+        return result
     except requests.exceptions.HTTPError as http_err:
         log(f"HTTP error occurred: {http_err}")
     except requests.exceptions.ConnectionError:
@@ -46,7 +49,7 @@ def ollama_prompt():
         log(f"Unexpected error occurred: {err}")
     except KeyError:
         log("Error: 'response' key not found in Ollama output.")
-    return result
+    return None
 
 
 def get_json(response_text):
@@ -55,6 +58,7 @@ def get_json(response_text):
         return parsed
     except json.JSONDecodeError:
         log("Validation failed: Response is not valid JSON.")
+        return None
 
 
 def validate_json(json_raw):
@@ -100,12 +104,20 @@ def validate_json(json_raw):
 
 
 def main():
+    # @prathamesh replace the below line with getting response from frontend.
+    input_response = USER_INPUT.copy()
+    with open(PATH_TO_TEXT, "r") as file:
+        input_response["text"] = file.read()
     tries = 0
     while tries < MAX_TRIES:
         log(f"Attempt {tries + 1}/{MAX_TRIES}")
-        llm_output = ollama_prompt()
+        llm_output = ollama_prompt(input_response)
+        if llm_output is None:
+            log("No response from Ollama. Retrying...")
+            tries += 1
+            continue
         parsed_json = get_json(llm_output)
-        if validate_json(parsed_json):
+        if parsed_json and validate_json(parsed_json):
             log("Returning the JSON...")
             return parsed_json
         log(f"Reprompting...")
