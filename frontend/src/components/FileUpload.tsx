@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
-  onNext: () => void;
+  onNext: (file: File) => void;
   selectedFile: File | null;
 }
 
@@ -17,7 +17,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         toast.error("File size must be less than 10MB");
         return;
       }
@@ -52,7 +52,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-6">
-      {/* Particle Background */}
       <div className="particles">
         {[...Array(50)].map((_, i) => (
           <div
@@ -68,7 +67,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
       </div>
 
       <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold text-gradient floating-animation">
             MCQ Generator
@@ -78,7 +76,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
           </p>
         </div>
 
-        {/* File Upload Card */}
         <Card className="card-gradient border-primary/20 p-8 hover-lift glow-effect">
           {!selectedFile ? (
             <div
@@ -106,7 +103,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
                     Drag and drop your file here, or click to browse
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Supported formats: PDF, DOC, DOCX, TXT, MD (Max 10MB)
+                    Supported formats: PDF (Max 10MB)
                   </p>
                 </div>
                 <Button variant="outline" size="lg" className="pointer-events-none">
@@ -135,10 +132,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              
               <div className="text-center">
                 <p className="text-success font-medium mb-4">✓ File uploaded successfully!</p>
-                <Button onClick={onNext} size="lg" variant="default">
+                <Button 
+                  onClick={() => {
+                    console.log(selectedFile)
+                    onNext(selectedFile)
+                  }} 
+                  size="lg" 
+                  variant="default"
+                >
                   Proceed to Topic Selection
                 </Button>
               </div>
@@ -146,7 +149,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
           )}
         </Card>
 
-        {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { title: "AI-Powered", description: "Intelligent question generation using advanced AI" },

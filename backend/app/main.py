@@ -4,13 +4,14 @@ from app.routes import extract_topics
 
 app = FastAPI()
 
-# Allow CORS (you can restrict to your frontend domain)
+# Allow CORS (customize origins in prod!)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # or ["http://localhost:3000"] for React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Register your route
 app.include_router(extract_topics.router)

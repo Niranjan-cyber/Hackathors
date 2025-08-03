@@ -141,6 +141,7 @@ const Index = () => {
       return (
         <ScanningPage
           fileName={config.file?.name || ''}
+          file={config.file} // Pass the file prop
           onComplete={handleScanningComplete}
         />
       );

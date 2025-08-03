@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { FileText, Brain, Sparkles, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
 interface ScanningPageProps {
   fileName: string;
+  file: File;
   onComplete: (detectedTopics: string[]) => void;
 }
 
@@ -15,32 +17,40 @@ const scanningSteps = [
   { id: 4, text: "Generating topic suggestions...", icon: CheckCircle },
 ];
 
-// Mock detected topics - in real app, this would come from AI
-const mockDetectedTopics = [
-  "Machine Learning",
-  "Data Structures",
-  "Algorithms",
-  "Computer Networks",
-  "Database Management",
-  "Software Engineering",
-  "Artificial Intelligence",
-  "Operating Systems"
-];
-
-export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete }) => {
+export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, file, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [topics, setTopics] = useState<string[] | null>(null);
+  const [animationDone, setAnimationDone] = useState(false);
 
+  // 1. Start API request immediately
   useEffect(() => {
-    const totalDuration = 4000; // 4 seconds total
+    const fetchTopics = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axios.post('http://localhost:8000/extract-topics', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
+          },
+        });
+        setTopics(response.data.topics || []);
+      } catch (error) {
+        setTopics([]);
+      }
+    };
+    fetchTopics();
+  }, [file]);
+
+  // 2. Run animation as before
+  useEffect(() => {
+    const totalDuration = 4000;
     const stepDuration = totalDuration / scanningSteps.length;
-    
+
     const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + (100 / (totalDuration / 100));
-        return Math.min(newProgress, 100);
-      });
+      setProgress(prev => Math.min(prev + (100 / (totalDuration / 100)), 100));
     }, 100);
 
     const stepInterval = setInterval(() => {
@@ -48,14 +58,11 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
         const nextStep = prev + 1;
         if (nextStep <= scanningSteps.length) {
           setCompletedSteps(prevCompleted => [...prevCompleted, nextStep - 1]);
-          
           if (nextStep === scanningSteps.length) {
-            // Complete the scanning process
             setTimeout(() => {
-              onComplete(mockDetectedTopics);
+              setAnimationDone(true);
             }, 500);
           }
-          
           return nextStep;
         }
         return prev;
@@ -66,11 +73,17 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
       clearInterval(interval);
       clearInterval(stepInterval);
     };
-  }, [onComplete]);
+  }, []);
+
+  // 3. When both are done, call onComplete
+  useEffect(() => {
+    if (animationDone && topics !== null) {
+      onComplete(topics);
+    }
+  }, [animationDone, topics, onComplete]);
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-6">
-      {/* Particle Background */}
       <div className="particles">
         {[...Array(50)].map((_, i) => (
           <div
@@ -86,7 +99,6 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
       </div>
 
       <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold text-gradient floating-animation">
             Analyzing Document
@@ -96,10 +108,8 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
           </p>
         </div>
 
-        {/* Main Scanning Card */}
         <Card className="card-gradient border-primary/20 p-8 hover-lift glow-effect">
           <div className="space-y-8">
-            {/* Progress Bar */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-foreground">Scanning Progress</span>
@@ -108,13 +118,11 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
               <Progress value={progress} className="h-3 bg-secondary/50" />
             </div>
 
-            {/* Scanning Steps */}
             <div className="space-y-4">
               {scanningSteps.map((step, index) => {
                 const Icon = step.icon;
                 const isCompleted = completedSteps.includes(index);
                 const isCurrent = currentStep === index;
-                const isUpcoming = currentStep < index;
 
                 return (
                   <div
@@ -157,7 +165,6 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
               })}
             </div>
 
-            {/* Processing Animation */}
             <div className="flex justify-center">
               <div className="relative">
                 <div className="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
@@ -167,7 +174,6 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
               </div>
             </div>
 
-            {/* Status Text */}
             <div className="text-center">
               <p className="text-muted-foreground">
                 Please wait while we process your document...
@@ -176,7 +182,6 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
           </div>
         </Card>
 
-        {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { title: "Deep Analysis", description: "Advanced AI algorithms analyze your content" },
