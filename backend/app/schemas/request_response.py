@@ -1,6 +1,5 @@
-# schemas/request_response.py
-
 from pydantic import BaseModel
+from typing import List
 
-class PredictionRequest(BaseModel):
-    text: str
+class TopicsResponse(BaseModel):
+    topics: List[str]
