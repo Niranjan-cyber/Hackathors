@@ -1,6 +1,7 @@
 from prompt import prompt_func
 import requests
 import json
+import time
 
 # @prathamesh This should be the format of response from frontend
 USER_INPUT = {
@@ -21,6 +22,7 @@ def log(text):
 
 def ollama_prompt(input_dict):
     log("Sending request to OLLAMA API...")
+    start_time = time.time()
     try:
         response = requests.post(
             OLLAMA_URL,
@@ -38,6 +40,11 @@ def ollama_prompt(input_dict):
         )
         response.raise_for_status()
         result = response.json()["response"]
+        log(
+            f"Successfully recieved Response from LLM in {
+                time.time() - start_time
+            } seconds..."
+        )
         return result
     except requests.exceptions.HTTPError as http_err:
         log(f"HTTP error occurred: {http_err}")
