@@ -1,19 +1,13 @@
-from prompt import prompt_func
+from .prompt import prompt_func
 import requests
 import json
 import time
 
-# @prathamesh This should be the format of response from frontend
-USER_INPUT = {
-    "topics": ["Bias Variance trade-off", "Evaluation metrics for machine learning"],
-    "difficulty": "medium",
-    "num_questions": 5,
-}
-TIMEOUT = 20
+TIMEOUT = 60
 MAX_TRIES = 3
 MODEL_NAME = "openhermes"
 OLLAMA_URL = "http://localhost:11434/api/generate"
-PATH_TO_TEXT = "../OCR_text.txt"
+PATH_TO_TEXT = "app/models/mcq_generation/OCR_text.txt"
 
 
 def log(text):
@@ -22,7 +16,8 @@ def log(text):
 
 def generate_payload(userinput_response):
     payload = userinput_response.copy()
-    with open(PATH_TO_TEXT, "r") as file:
+    # The following line is where the MCQ generator reads the context text for question generation:
+    with open(PATH_TO_TEXT, "r", encoding="utf-8") as file:
         payload["text"] = file.read()
     payload["format"] = "json"
     return payload
@@ -119,7 +114,7 @@ def validate_json(json_raw):
 
 
 def main(input_response):
-    # @prathamesh replace the below line with getting response from frontend.
+    # Use the input_response as provided, only add format if needed
     input_response = generate_payload(input_response)
     tries = 0
     while tries < MAX_TRIES:

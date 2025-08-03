@@ -12,17 +12,19 @@ router = APIRouter()
 
 @router.post("/extract-topics/", response_class=JSONResponse)
 async def extract_topics(file: UploadFile = File(...)):
-    print("hello")
     temp_file_path = f"temp_{file.filename}"
     # Save uploaded file to temp path
     with open(temp_file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
     try:
-        print("HI")
         # Step 1: Extract text from the PDF
         extracted_text = extract_text_from_pdf(temp_file_path)
         
+        # After extracting text from the PDF (assume variable is 'extracted_text')
+        with open("app/models/mcq_generation/OCR_text.txt", "w", encoding="utf-8") as f:
+            f.write(extracted_text)
+
         # Step 2: Extract topics
         topics = extract_topics_from_pdf_text(extracted_text)
 
