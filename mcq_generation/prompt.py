@@ -42,6 +42,7 @@ Constraints:
 - The difficulty level of the question should be : {difficulty}
 - Each question should have 4 options labelled A to D. Only one of these options should be correct and the other three should not be very obvious to be wrong.
 - Each option should have different and clear meanings. There should be no ambiguity between the options.
+- Respond with ONLY the formatted JSON object. No commentary, explanation or surrounding text.
 
 ###
 Example of formatted MCQ question

@@ -20,6 +20,14 @@ def log(text):
     print(f"{__name__} - {text}")
 
 
+def generate_payload(userinput_response):
+    payload = userinput_response.copy()
+    with open(PATH_TO_TEXT, "r") as file:
+        payload["text"] = file.read()
+    payload["format"] = "json"
+    return payload
+
+
 def ollama_prompt(input_dict):
     log("Sending request to OLLAMA API...")
     start_time = time.time()
@@ -113,8 +121,7 @@ def validate_json(json_raw):
 def main():
     # @prathamesh replace the below line with getting response from frontend.
     input_response = USER_INPUT.copy()
-    with open(PATH_TO_TEXT, "r") as file:
-        input_response["text"] = file.read()
+    input_response = generate_payload(input_response)
     tries = 0
     while tries < MAX_TRIES:
         log(f"Attempt {tries + 1}/{MAX_TRIES}")
