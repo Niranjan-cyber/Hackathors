@@ -3,3 +3,4 @@ uvicorn
 pymupdf
 spacy
 ollama
+aiofiles

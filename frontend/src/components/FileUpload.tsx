@@ -32,10 +32,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onNext, se
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'text/plain': ['.txt'],
-      'text/markdown': ['.md'],
     },
     multiple: false,
     onDragEnter: () => setDragActive(true),
