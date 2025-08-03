@@ -1,8 +1,7 @@
 import fitz  # PyMuPDF
-import subprocess
 import re
-import csv
 import ollama
+import json
 
 def clean_topic_text(topic):
     # Remove quotes, brackets, and text inside parentheses
@@ -107,12 +106,10 @@ def extract_topics_from_pdf_text(text, model="phi3", output_csv="topics.csv"):
 
     selected_topics = list(all_topics)[:10]
 
-    # Save to CSV
-    with open(output_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Topic"])
-        for topic in selected_topics:
-            writer.writerow([topic])
+    # Save to JSON
+    with open("topics.json", "w", encoding="utf-8") as f:
+        json.dump({"topics": selected_topics}, f, indent=2, ensure_ascii=False)
+
     
     print(f"\n✅ Extracted {len(selected_topics)} topics and saved to {output_csv}")
 
@@ -132,6 +129,6 @@ def clean_and_extract_keywords(topic_text, max_keywords=10):
 # Entry Point
 # ----------------------------
 if __name__ == "__main__":
-    pdf_path = "sample5.pdf"  # Change this
+    pdf_path = ""  # Change this
     text = extract_text_from_pdf(pdf_path)
     extract_topics_from_pdf_text(text, model="phi3", output_csv="topics.csv")
