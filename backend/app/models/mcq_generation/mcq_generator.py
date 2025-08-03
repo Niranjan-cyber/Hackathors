@@ -118,9 +118,8 @@ def validate_json(json_raw):
         return False
 
 
-def main():
+def main(input_response):
     # @prathamesh replace the below line with getting response from frontend.
-    input_response = USER_INPUT.copy()
     input_response = generate_payload(input_response)
     tries = 0
     while tries < MAX_TRIES:

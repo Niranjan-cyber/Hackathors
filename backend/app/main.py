@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import extract_topics
+from app.routes import generate_questions
 
 app = FastAPI()
 
@@ -15,3 +16,4 @@ app.add_middleware(
 
 # Register your route
 app.include_router(extract_topics.router)
+app.include_router(generate_questions.router)
