@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Brain } from 'lucide-react';
 
 interface ScanningPageProps {
@@ -7,27 +7,68 @@ interface ScanningPageProps {
   onComplete: (detectedTopics: string[]) => void;
 }
 
-// Mock detected topics - in real app, this would come from AI
-const mockDetectedTopics = [
-  "Machine Learning",
-  "Data Structures",
-  "Algorithms",
-  "Computer Networks",
-  "Database Management",
-  "Software Engineering",
-  "Artificial Intelligence",
-  "Operating Systems"
-];
+export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, file, onComplete }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete }) => {
   useEffect(() => {
-    // Since topics are hardcoded/ready, redirect after 2 seconds
-    const timer = setTimeout(() => {
-      onComplete(mockDetectedTopics);
-    }, 2000);
+    const extractTopics = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+        // Create form data for the API call
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Make API call to extract topics from PDF
+        const response = await fetch('http://localhost:8000/extract-topics/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to extract topics: ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        
+        // Extract topics from the response - backend returns {"topics": [...]}
+        const detectedTopics = responseData.topics || responseData || [];
+        
+        // Ensure detectedTopics is always an array
+        const topicsArray = Array.isArray(detectedTopics) ? detectedTopics : [];
+        
+        // Wait a bit to show the loading animation
+        setTimeout(() => {
+          onComplete(topicsArray);
+        }, 1000);
+
+      } catch (err) {
+        console.error('Error extracting topics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to extract topics');
+        
+        // Fallback: use mock topics after error
+        setTimeout(() => {
+          const mockDetectedTopics = [
+            "Machine Learning",
+            "Data Structures",
+            "Algorithms",
+            "Computer Networks",
+            "Database Management",
+            "Software Engineering",
+            "Artificial Intelligence",
+            "Operating Systems"
+          ];
+          onComplete(mockDetectedTopics);
+        }, 2000);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    extractTopics();
+  }, [file, onComplete]);
 
   return (
     <div className="min-h-screen bg-gradient-hero p-6 flex items-center justify-center">
@@ -54,8 +95,20 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
 
         {/* Extracting Topics Text */}
         <h1 className="text-4xl font-bold text-gradient">
-          Extracting Topics
+          {error ? 'Error Extracting Topics' : 'Extracting Topics'}
         </h1>
+
+        {/* File name display */}
+        <p className="text-lg text-muted-foreground">
+          Processing: {fileName}
+        </p>
+
+        {/* Error Message */}
+        {error && (
+          <p className="text-red-500 text-lg max-w-md mx-auto">
+            {error}
+          </p>
+        )}
 
         {/* Please wait text */}
         <p className="text-xl text-muted-foreground">

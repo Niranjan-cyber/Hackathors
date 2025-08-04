@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Brain } from 'lucide-react';
 
 interface TestStartingProps {
-  onStart: () => void;
+  onStart: (questions?: any[]) => void;
   questionCount: number;
   timeLimit: number | null;
   difficulty: string;
@@ -16,14 +16,54 @@ export const TestStarting: React.FC<TestStartingProps> = ({
   difficulty, 
   topics 
 }) => {
-  useEffect(() => {
-    // Since questions are hardcoded/ready, redirect after 2 seconds
-    const timer = setTimeout(() => {
-      onStart();
-    }, 2000);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    return () => clearTimeout(timer);
-  }, [onStart]);
+  useEffect(() => {
+    const generateQuestions = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Create form data for the API call
+        const formData = new FormData();
+        formData.append('topics', JSON.stringify(topics));
+        formData.append('difficulty', difficulty);
+        formData.append('num_questions', questionCount.toString());
+
+        // Make API call to generate questions
+        const response = await fetch('http://localhost:8000/generate-questions/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to generate questions: ${response.statusText}`);
+        }
+
+        const questions = await response.json();
+        
+        // Wait a bit to show the loading animation
+        setTimeout(() => {
+          onStart(questions);
+        }, 1000);
+
+      } catch (err) {
+        console.error('Error generating questions:', err);
+        setError(err instanceof Error ? err.message : 'Failed to generate questions');
+        
+        // Fallback: start test without questions after error
+        setTimeout(() => {
+          onStart();
+        }, 2000);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    generateQuestions();
+  }, [onStart, questionCount, difficulty, topics]);
+
   return (
     <div className="min-h-screen bg-gradient-hero p-6 flex items-center justify-center">
       {/* Particle Background */}
@@ -49,8 +89,15 @@ export const TestStarting: React.FC<TestStartingProps> = ({
 
         {/* Starting Test Text */}
         <h1 className="text-4xl font-bold text-gradient">
-          Starting Test
+          {error ? 'Error Generating Questions' : 'Generating Questions'}
         </h1>
+
+        {/* Error Message */}
+        {error && (
+          <p className="text-red-500 text-lg max-w-md mx-auto">
+            {error}
+          </p>
+        )}
 
         {/* Loading dots */}
         <div className="flex justify-center space-x-2">

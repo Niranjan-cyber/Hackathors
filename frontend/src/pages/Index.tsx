@@ -9,7 +9,7 @@ import { TestStarting } from '@/components/TestStarting';
 import { TestInterface } from '@/components/TestInterface';
 import { Results } from '@/components/Results';
 
-// Mock question data (in a real app, this would come from AI generation)
+// Mock question data (fallback if API fails)
 const generateMockQuestions = (topics: string[], difficulty: string, count: number) => {
   const questions = [];
   for (let i = 0; i < count; i++) {
@@ -84,12 +84,46 @@ const Index = () => {
   };
 
   const handleTimerSelect = (timeLimit: number | null) => {
-    const questions = generateMockQuestions(config.topics, config.difficulty, config.questionCount);
-    setConfig(prev => ({ ...prev, timeLimit, questions }));
+    setConfig(prev => ({ ...prev, timeLimit }));
     setCurrentStep('starting');
   };
 
-  const handleStartTest = () => {
+  const handleStartTest = (questions?: any[]) => {
+    // Use API-generated questions if available, otherwise use mock questions
+    const finalQuestions = questions || generateMockQuestions(config.topics, config.difficulty, config.questionCount);
+    
+    // Transform API questions to match the expected format if needed
+    const formattedQuestions = finalQuestions.map((q, index) => {
+      if (q.options && typeof q.options === 'object') {
+        // API format: { "A": "...", "B": "...", "C": "...", "D": "..." }
+        const optionsArray = Object.values(q.options);
+        const correctAnswerIndex = optionsArray.findIndex((_, i) => {
+          const optionKey = String.fromCharCode(65 + i); // A, B, C, D
+          return optionKey === q.correct_answer;
+        });
+        
+        return {
+          id: index,
+          question: q.question,
+          options: optionsArray,
+          correctAnswer: correctAnswerIndex >= 0 ? correctAnswerIndex : 0,
+          explanation: q.explanation || `Explanation for question ${index + 1}`,
+          topic: Array.isArray(q.topics) ? q.topics[0] : q.topics || 'General'
+        };
+      } else {
+        // Mock format or already formatted
+        return {
+          id: index,
+          question: q.question,
+          options: q.options || q.optionsArray,
+          correctAnswer: q.correctAnswer || 0,
+          explanation: q.explanation || `Explanation for question ${index + 1}`,
+          topic: q.topic || 'General'
+        };
+      }
+    });
+
+    setConfig(prev => ({ ...prev, questions: formattedQuestions }));
     setCurrentStep('test');
   };
 
@@ -149,7 +183,7 @@ const Index = () => {
       return (
         <ScanningPage
           fileName={config.file?.name || ''}
-          file={config.file} // Pass the file prop
+          file={config.file}
           onComplete={handleScanningComplete}
         />
       );
