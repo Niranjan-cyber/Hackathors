@@ -1,34 +1,29 @@
 import React, { useEffect } from 'react';
 import { Brain } from 'lucide-react';
 
-interface ScanningPageProps {
-  fileName: string;
-  file: File;
-  onComplete: (detectedTopics: string[]) => void;
+interface TestStartingProps {
+  onStart: () => void;
+  questionCount: number;
+  timeLimit: number | null;
+  difficulty: string;
+  topics: string[];
 }
 
-// Mock detected topics - in real app, this would come from AI
-const mockDetectedTopics = [
-  "Machine Learning",
-  "Data Structures",
-  "Algorithms",
-  "Computer Networks",
-  "Database Management",
-  "Software Engineering",
-  "Artificial Intelligence",
-  "Operating Systems"
-];
-
-export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete }) => {
+export const TestStarting: React.FC<TestStartingProps> = ({ 
+  onStart, 
+  questionCount, 
+  timeLimit, 
+  difficulty, 
+  topics 
+}) => {
   useEffect(() => {
-    // Since topics are hardcoded/ready, redirect after 2 seconds
+    // Since questions are hardcoded/ready, redirect after 2 seconds
     const timer = setTimeout(() => {
-      onComplete(mockDetectedTopics);
+      onStart();
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [onComplete]);
-
+  }, [onStart]);
   return (
     <div className="min-h-screen bg-gradient-hero p-6 flex items-center justify-center">
       {/* Particle Background */}
@@ -52,15 +47,10 @@ export const ScanningPage: React.FC<ScanningPageProps> = ({ fileName, onComplete
           <Brain className="w-24 h-24 text-primary animate-pulse" />
         </div>
 
-        {/* Extracting Topics Text */}
+        {/* Starting Test Text */}
         <h1 className="text-4xl font-bold text-gradient">
-          Extracting Topics
+          Starting Test
         </h1>
-
-        {/* Please wait text */}
-        <p className="text-xl text-muted-foreground">
-          Please wait
-        </p>
 
         {/* Loading dots */}
         <div className="flex justify-center space-x-2">

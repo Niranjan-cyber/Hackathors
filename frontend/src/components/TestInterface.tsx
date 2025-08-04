@@ -71,7 +71,7 @@ export const TestInterface: React.FC<TestInterfaceProps> = ({ onSubmit, question
     setIsSubmitting(true);
     const timeSpent = Math.floor((Date.now() - startTime) / 1000); // in seconds
     
-    toast.success("Test submitted successfully!");
+    toast.success("Test submitted successfully!", { duration: 1000});
     onSubmit(answers, timeSpent);
   };
 

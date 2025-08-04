@@ -5,6 +5,7 @@ import { TopicSelection } from '@/components/TopicSelection';
 import { DifficultySelection } from '@/components/DifficultySelection';
 import { QuestionCountSelection } from '@/components/QuestionCountSelection';
 import { TimerSelection } from '@/components/TimerSelection';
+import { TestStarting } from '@/components/TestStarting';
 import { TestInterface } from '@/components/TestInterface';
 import { Results } from '@/components/Results';
 
@@ -30,7 +31,7 @@ const generateMockQuestions = (topics: string[], difficulty: string, count: numb
   return questions;
 };
 
-type Step = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer' | 'test' | 'results';
+type Step = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer' | 'starting' | 'test' | 'results';
 
 interface TestConfig {
   file: File | null;
@@ -85,6 +86,10 @@ const Index = () => {
   const handleTimerSelect = (timeLimit: number | null) => {
     const questions = generateMockQuestions(config.topics, config.difficulty, config.questionCount);
     setConfig(prev => ({ ...prev, timeLimit, questions }));
+    setCurrentStep('starting');
+  };
+
+  const handleStartTest = () => {
     setCurrentStep('test');
   };
 
@@ -121,6 +126,9 @@ const Index = () => {
         break;
       case 'timer':
         setCurrentStep('count');
+        break;
+      case 'starting':
+        setCurrentStep('timer');
         break;
       default:
         break;
@@ -185,6 +193,17 @@ const Index = () => {
         />
       );
 
+    case 'starting':
+      return (
+        <TestStarting
+          onStart={handleStartTest}
+          questionCount={config.questionCount}
+          timeLimit={config.timeLimit}
+          difficulty={config.difficulty}
+          topics={config.topics}
+        />
+      );
+
     case 'test':
       return (
         <TestInterface
@@ -205,7 +224,19 @@ const Index = () => {
       );
 
     default:
-      return <div>Loading...</div>;
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, hsl(220, 20%, 8%) 0%, hsl(220, 18%, 12%) 50%, hsl(220, 20%, 8%) 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'hsl(220, 15%, 95%)',
+          fontFamily: 'Inter, sans-serif'
+        }}>
+          Loading...
+        </div>
+      );
   }
 };
 

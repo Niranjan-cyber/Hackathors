@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Download, Mail, CheckCircle, XCircle, Clock, Target, RotateCcw } from 'lucide-react';
+import { Trophy, Download, Mail, CheckCircle, XCircle, Clock, Target, RotateCcw, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,6 +43,102 @@ export const Results: React.FC<ResultsProps> = ({ questions, userAnswers, timeSp
 
   const grade = getGrade();
 
+  const handleEmailSend = async () => {
+    if (!email.trim()) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsEmailSending(true);
+    
+    // Simulate email sending
+    setTimeout(() => {
+      toast.success("Results sent to your email!");
+      setIsEmailSending(false);
+    }, 2000);
+  };
+
+  const handlePrintReport = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Test Results Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .score { font-size: 48px; font-weight: bold; color: #2563eb; }
+            .grade { font-size: 24px; margin: 10px 0; }
+            .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+            .stat { text-align: center; }
+            .stat-value { font-size: 24px; font-weight: bold; }
+            .topic-breakdown { margin: 30px 0; }
+            .topic-item { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+            .question-item { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .correct { color: #16a34a; }
+            .incorrect { color: #dc2626; }
+            .explanation { background: #f3f4f6; padding: 10px; border-radius: 5px; margin-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Test Results Report</h1>
+            <div class="score">${percentage}%</div>
+            <div class="grade">Grade: ${grade.grade}</div>
+          </div>
+          
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-value correct">${correctAnswers}</div>
+              <div>Correct</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value incorrect">${totalQuestions - correctAnswers}</div>
+              <div>Incorrect</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value">${timeFormatted}</div>
+              <div>Time Spent</div>
+            </div>
+          </div>
+          
+          <div class="topic-breakdown">
+            <h2>Performance by Topic</h2>
+            ${getTopicBreakdown().map(topic => `
+              <div class="topic-item">
+                <strong>${topic.topic}:</strong> ${topic.percentage}% (${topic.correct}/${topic.total} correct)
+              </div>
+            `).join('')}
+          </div>
+          
+          <div>
+            <h2>Detailed Questions</h2>
+            ${questions.map((q, index) => {
+              const userAnswer = userAnswers[index];
+              const isCorrect = userAnswer === q.correctAnswer;
+              return `
+                <div class="question-item">
+                  <h3>Q${index + 1}. ${q.question}</h3>
+                  <p><strong>Your Answer:</strong> ${q.options[userAnswer] || 'Not answered'}</p>
+                  <p><strong>Correct Answer:</strong> ${q.options[q.correctAnswer]}</p>
+                  <p class="${isCorrect ? 'correct' : 'incorrect'}"><strong>Result:</strong> ${isCorrect ? 'Correct' : 'Incorrect'}</p>
+                  ${q.explanation ? `<div class="explanation"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const getTopicBreakdown = () => {
     const topicStats: Record<string, { correct: number; total: number }> = {};
     
@@ -65,221 +161,6 @@ export const Results: React.FC<ResultsProps> = ({ questions, userAnswers, timeSp
   };
 
   const topicBreakdown = getTopicBreakdown();
-
-  // Email validation function
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  // Generate email content
-  const generateEmailContent = () => {
-    const resultsText = `
-TEST RESULTS SUMMARY
-===================
-
-Overall Performance:
-• Score: ${percentage}% (${correctAnswers}/${totalQuestions})
-• Grade: ${grade.grade}
-• Time Spent: ${timeFormatted}
-
-Topic Breakdown:
-${topicBreakdown.map(topic => 
-  `• ${topic.topic}: ${topic.percentage}% (${topic.correct}/${topic.total})`
-).join('\n')}
-
-Detailed Question Review:
-${questions.map((q, index) => {
-  const userAnswer = userAnswers[index];
-  const isCorrect = userAnswer === q.correctAnswer;
-  return `
-Q${index + 1}. ${q.question}
-Your Answer: ${userAnswer !== undefined ? q.options[userAnswer] : 'Not answered'}
-Correct Answer: ${q.options[q.correctAnswer]}
-Result: ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
-${q.explanation ? `Explanation: ${q.explanation}` : ''}
-`;
-}).join('\n')}
-
-Generated on: ${new Date().toLocaleString()}
-    `;
-    return resultsText;
-  };
-
-  // Simulate email sending with actual content
-  const handleEmailSend = async () => {
-    if (!email.trim()) {
-      toast.error("Please enter an email address");
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsEmailSending(true);
-    
-    try {
-      // Simulate API call with actual email service
-      const emailData = {
-        to: email,
-        subject: `Test Results - ${percentage}% Score`,
-        content: generateEmailContent(),
-        attachments: []
-      };
-
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // In a real implementation, you would make an API call here:
-      // const response = await fetch('/api/send-email', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(emailData)
-      // });
-
-      console.log('Email would be sent with data:', emailData);
-      toast.success(`Results sent successfully to ${email}!`);
-      setEmail(''); // Clear email field after successful send
-      
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      toast.error("Failed to send email. Please try again.");
-    } finally {
-      setIsEmailSending(false);
-    }
-  };
-
-  // Generate and download PDF
-  const handleDownloadPDF = () => {
-    try {
-      // Create PDF content as HTML string
-      const pdfContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Test Results Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 20px; }
-        .score { font-size: 48px; font-weight: bold; color: #3b82f6; margin: 20px 0; }
-        .grade { font-size: 24px; font-weight: bold; padding: 10px 20px; border-radius: 10px; display: inline-block; }
-        .grade-a { background: #dcfce7; color: #166534; }
-        .grade-b { background: #dbeafe; color: #1d4ed8; }
-        .grade-c { background: #fef3c7; color: #92400e; }
-        .grade-f { background: #fee2e2; color: #dc2626; }
-        .stats { display: flex; justify-content: space-around; margin: 30px 0; }
-        .stat { text-align: center; }
-        .stat-value { font-size: 32px; font-weight: bold; }
-        .stat-label { color: #666; font-size: 14px; }
-        .section { margin: 30px 0; }
-        .section h2 { border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
-        .topic-item { background: #f9fafb; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; }
-        .question { margin: 20px 0; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; }
-        .question-header { font-weight: bold; margin-bottom: 10px; }
-        .options { margin: 15px 0; }
-        .option { padding: 8px; margin: 5px 0; border-radius: 4px; }
-        .correct { background: #dcfce7; color: #166534; }
-        .incorrect { background: #fee2e2; color: #dc2626; }
-        .neutral { background: #f3f4f6; color: #374151; }
-        .explanation { background: #eff6ff; padding: 15px; border-radius: 8px; margin-top: 15px; }
-        .footer { margin-top: 50px; text-align: center; color: #666; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🏆 Test Results Report</h1>
-        <div class="score">${percentage}%</div>
-        <div class="grade grade-${grade.grade.toLowerCase().replace('+', '')}">${grade.grade}</div>
-    </div>
-
-    <div class="stats">
-        <div class="stat">
-            <div class="stat-value" style="color: #16a34a;">${correctAnswers}</div>
-            <div class="stat-label">Correct</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" style="color: #dc2626;">${totalQuestions - correctAnswers}</div>
-            <div class="stat-label">Incorrect</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" style="color: #3b82f6;">${timeFormatted}</div>
-            <div class="stat-label">Time Spent</div>
-        </div>
-    </div>
-
-    <div class="section">
-        <h2>📊 Performance by Topic</h2>
-        ${topicBreakdown.map(topic => `
-            <div class="topic-item">
-                <span><strong>${topic.topic}</strong></span>
-                <span>${topic.percentage}% (${topic.correct}/${topic.total})</span>
-            </div>
-        `).join('')}
-    </div>
-
-    <div class="section">
-        <h2>📝 Detailed Question Review</h2>
-        ${questions.map((q, index) => {
-          const userAnswer = userAnswers[index];
-          const isCorrect = userAnswer === q.correctAnswer;
-          return `
-            <div class="question">
-                <div class="question-header">
-                    Q${index + 1}. ${q.question}
-                    <span style="float: right; color: ${isCorrect ? '#16a34a' : '#dc2626'}">
-                        ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                    </span>
-                </div>
-                <div class="options">
-                    ${q.options.map((option, optionIndex) => `
-                        <div class="option ${
-                          optionIndex === q.correctAnswer ? 'correct' : 
-                          userAnswer === optionIndex ? 'incorrect' : 'neutral'
-                        }">
-                            ${String.fromCharCode(65 + optionIndex)}. ${option}
-                            ${optionIndex === q.correctAnswer ? ' ✓' : ''}
-                            ${userAnswer === optionIndex && optionIndex !== q.correctAnswer ? ' ✗ Your Answer' : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                ${q.explanation ? `
-                    <div class="explanation">
-                        <strong>💡 Explanation:</strong> ${q.explanation}
-                    </div>
-                ` : ''}
-            </div>
-          `;
-        }).join('')}
-    </div>
-
-    <div class="footer">
-        <p>Report generated on ${new Date().toLocaleString()}</p>
-        <p>Test Results System</p>
-    </div>
-</body>
-</html>
-      `;
-
-      // Create blob and download
-      const blob = new Blob([pdfContent], { type: 'text/html' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `test-results-${percentage}%-${new Date().toISOString().split('T')[0]}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("Results report downloaded successfully!");
-
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      toast.error("Failed to generate report. Please try again.");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-hero p-6">
@@ -385,22 +266,23 @@ Generated on: ${new Date().toLocaleString()}
             </div>
           </Card>
 
-          {/* Download Report */}
+          {/* Print Report */}
           <Card className="card-gradient border-primary/20 p-6">
             <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
-              <Download className="w-5 h-5 mr-2" />
-              Download Report
+              <Printer className="w-5 h-5 mr-2" />
+              Print Report
             </h3>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Download a comprehensive HTML report with all questions, answers, and explanations.
+                Generate a printable report with all questions, answers, and explanations. You can save it as PDF using your browser.
               </p>
               <Button
-                onClick={handleDownloadPDF}
+                onClick={handlePrintReport}
                 variant="outline"
                 className="w-full"
               >
-                Download Report
+                <Printer className="w-4 h-4 mr-2" />
+                Print Report
               </Button>
             </div>
           </Card>
