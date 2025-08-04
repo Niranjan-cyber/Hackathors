@@ -1,53 +1,38 @@
 import asyncio
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Form
 import json
 import sys
 import os
+from app.models.mcq_generation import mcq_generator
 
-# --- Import your actual MCQ generation function ---
-try:
-    # Add the backend directory to Python path
-    backend_path = os.path.join(os.path.dirname(__file__), '..', '..')
-    if backend_path not in sys.path:
-        sys.path.insert(0, backend_path)
-    
-    from app.models.mcq_generation import mcq_generator
-    # Test if the module is properly imported
-    if not hasattr(mcq_generator, 'main'):
-        raise ImportError("mcq_generator module does not have main function")
-except ImportError as e:
-    print(f"CRITICAL: Could not import the model generation function: {e}")
-    print("Using a dummy function. The API will run but generation will fail.")
-    # This dummy function allows the server to start even if the import fails.
-    def generate_questions_from_model(*args, **kwargs):
-        return None
-    mcq_generator = None
 
 # --- Router Initialization ---
-router = APIRouter(
-    prefix="/questions",
-    tags=["Question Generation"],
-)
+router = APIRouter()
 
 # --- Configuration ---
-MAX_TRIES = 3
-# TODO: Extract context text from the uploaded file. For now, this is a placeholder.
-CONTEXT_TEXT = """
-The Bias-Variance tradeoff is a fundamental concept in machine learning.
-High bias (underfitting) occurs when a model is too simple to capture the underlying
-pattern in the data. High variance (overfitting) occurs when a model is too complex
-and captures noise instead of the underlying pattern. The goal is to find a balance.
-Evaluation metrics are crucial for assessing model performance. For classification,
-common metrics include accuracy, precision, recall, and F1-score. For regression,
-mean squared error (MSE) and R-squared are often used.
-"""
+VALID_DIFFICULTIES = ["easy", "medium", "hard"]
+MIN_QUESTIONS = 1
+MAX_QUESTIONS = 50
 
 def log(text: str):
     """Simple logger to print messages to the console."""
     print(f"INFO: {__name__} - {text}")
 
+def validate_input(topics_list: list, difficulty: str, num_questions: int) -> tuple[bool, str]:
+    """Validate input parameters and return (is_valid, error_message)."""
+    if not topics_list:
+        return False, "At least one topic must be provided"
+    
+    if difficulty.lower() not in VALID_DIFFICULTIES:
+        return False, f"Difficulty must be one of: {', '.join(VALID_DIFFICULTIES)}"
+    
+    if not isinstance(num_questions, int) or num_questions < MIN_QUESTIONS or num_questions > MAX_QUESTIONS:
+        return False, f"Number of questions must be between {MIN_QUESTIONS} and {MAX_QUESTIONS}"
+    
+    return True, ""
+
 # --- API Endpoint ---
-@router.post("/generate_questions/")
+@router.post("/generate-questions/")
 async def generate_questions(
     topics: str = Form(...),         # JSON string or comma-separated
     difficulty: str = Form(...),
@@ -85,20 +70,23 @@ async def generate_questions(
     except Exception:
         topics_list = [t.strip() for t in topics.split(',') if t.strip()]
     
+    # Validate input parameters
+    is_valid, error_message = validate_input(topics_list, difficulty, num_questions)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_message)
+    
     model_input = {
         "topics": topics_list,
-        "difficulty": difficulty,
+        "difficulty": difficulty.lower(),
         "num_questions": num_questions
     }
 
-
     try:
-        if mcq_generator is None:
-            raise Exception("mcq_generator module not available")
+        log(f"Generating {num_questions} questions for topics: {topics_list} with difficulty: {difficulty}")
         generated_questions = mcq_generator.main(model_input)
+        
         if isinstance(generated_questions, list) and generated_questions:
-            log("Successfully generated questions from the local model.")
-            # Return the list of question objects directly
+            log(f"Successfully generated {len(generated_questions)} questions from the local model.")
             return generated_questions
         else:
             log(f"Model returned an invalid or empty response: {generated_questions}")
@@ -106,9 +94,12 @@ async def generate_questions(
                 status_code=500,
                 detail="The question generation model failed to produce a valid response."
             )
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         log(f"An error occurred while calling the generation model: {e}")
         raise HTTPException(
             status_code=500,
-            detail="The question generation model failed to produce a valid response."
+            detail=f"Internal server error during question generation: {str(e)}"
         )

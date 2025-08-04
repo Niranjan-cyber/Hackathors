@@ -3,7 +3,7 @@ import requests
 import json
 import time
 
-TIMEOUT = 60
+TIMEOUT = 100
 MAX_TRIES = 3
 MODEL_NAME = "openhermes"
 OLLAMA_URL = "http://localhost:11434/api/generate"
