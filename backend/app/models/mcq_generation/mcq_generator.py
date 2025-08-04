@@ -15,11 +15,21 @@ def log(text):
 
 
 def generate_payload(userinput_response):
-    payload = userinput_response.copy()
+    """Generates payload that is to be sent to the OLLAMA API"""
     # The following line is where the MCQ generator reads the context text for question generation:
     with open(PATH_TO_TEXT, "r", encoding="utf-8") as file:
-        payload["text"] = file.read()
-    payload["format"] = "json"
+        text_extract = file.read()
+    payload = {
+        "model": MODEL_NAME,
+        "prompt": prompt_func(
+            text_extract,
+            userinput_response["topics"],
+            userinput_response["difficulty"],
+            userinput_response["num_questions"],
+        ),
+        "system": f"You are a careful and expert MCQ generator. You follow JSON schemas strictly and return a list of exactly {userinput_response['num_questions']} questions where each question in the list is a JSON object without any commentary or surrounding text.",
+        "stream": False,
+    }
     return payload
 
 
@@ -29,16 +39,7 @@ def ollama_prompt(input_dict):
     try:
         response = requests.post(
             OLLAMA_URL,
-            json={
-                "model": MODEL_NAME,
-                "prompt": prompt_func(
-                    input_dict["text"],
-                    input_dict["topics"],
-                    input_dict["difficulty"],
-                    input_dict["num_questions"],
-                ),
-                "stream": False,
-            },
+            json=input_dict,
             timeout=TIMEOUT,
         )
         response.raise_for_status()
