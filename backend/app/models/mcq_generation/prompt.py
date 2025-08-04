@@ -5,7 +5,6 @@ def prompt_func(text_extract, topic_list, difficulty, number_of_questions):
 {text_extract}
 
 ADAPTER TOOTHPASTE MEDICINE
-Instructions based on what you need to do for the extract are given below
 
 ###
 Context:
@@ -14,6 +13,16 @@ You are an expert multiple-choice question (MCQ) generator trained to create fac
 ###
 Your Task:
 Generate a set of {number_of_questions} high quality multiple-choice questions based on the text extract and the requested topics. Output them in a well-structured JSON array.
+
+###
+Guidelines for Good MCQs:
+- Questions should test understanding, recall, reasoning, or comparisons - not just trivial word matching.
+- Distractors should be plausible but clearly wrong, not trivially false or obviously off-topic.
+- Each option should have and clear meanings. There should be no ambiguity between the options.
+- The explanation should:
+  - Clearly justify why the correct answer is correct.
+  - Briefly explain why each other option is incorrect.
+
 
 ###
 Constraints:
@@ -34,14 +43,14 @@ Constraints:
   }}
 ]
 
-  - `"topics"` field will contain a list of all topics that apply to the questions. Choose topics only from the following:
+  - `"topics"` field must be a list of ALL the topics that apply to the questions. Choose topics only from the following:
     {topic_list}
   - The `"explanation"` field will contain a brief explanation of why the correct option is the correct one and why the other options are wrong.
 - Do not hallucinate or use any prior information for generating the questions.
-- Double check the truthness of the answer with the given extract before printing it out.
-- The difficulty level of the question should be : {difficulty}
+- Double check the truthness of the correct answer and its explanation with the given extract before printing it out.
+- Double check that the options of any question do not contradict with the explanation
+- The difficulty level of the questions should be : {difficulty}
 - Each question should have 4 options labelled A to D. Only one of these options should be correct and the other three should not be very obvious to be wrong.
-- Each option should have different and clear meanings. There should be no ambiguity between the options.
 - Respond with ONLY the formatted JSON object. No commentary, explanation or surrounding text.
 
 ###
