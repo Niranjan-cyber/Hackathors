@@ -1,58 +1,45 @@
-Git and Github SIG 
-Event Report 
- 
-1.Event Details:- 
-  
-Event Name: Git and Github SIG  
-     
-Date:03/03/2025 
-     
-Venue: Comp dept Seminar Hall and A1-112 
-     
-Time 4:00pm to 6:30pm 
- 
-2.Event Attendance:- 
-  
-Total number of attendees: 220 
-  
-Target audience: First Year Department Students 
- 
-3.Topics Covered:- 
- - Introduction to Git & GitHub 
- - Setting up repositories & managing commits 
- - Familiarization with basic Git commands 
- - Branching, merging & resolving conflicts 
- - Pull requests & collaborations 
- - Hands-on activities 
- 
-4. Feedback and Response:- 
-     
-Overall response: Positive 
-      
-Key takeaways from attendees:  
--The session was Interactive and doubts were cleared. 
--The session could have been managed more effectively. 
- 
-5.Challenges Faced and Solutions:- 
-Challenge 1:-  
-Needed more volunteers for management of attendees and solving doubts 
-Solution:-  
-We addressed this by reallocating available team members to assist with 
-attendee management and doubt resolution. Additionally, we encouraged 
-proactive participation from experienced attendees to help guide others. 
-Challenge 2:-  
-Prerequisites could have been provided to the students prior to the SIG. 
-Solution:-  
-To address this, we provided a quick overview of the prerequisites at the 
-beginning of the session to help attendees catch up.  
- 
-5.Suggestions for Future Events:- 
-  
--Increase the number of volunteers to improve attendee management and support. 
--Provide prerequisite materials to participants well in advance to ensure better 
-preparedness. 
- 
- 
- 
- 
- 
+🎬 After Eﬀects SIG Event Report
+📌 Event Details
+Event Name: After Eﬀects SIG
+Date: 19/03/25 - 20/03/25
+Time: 4:00 PM to 6:00 PM
+Venue: A1-311
+👥 Number of Attendees
+Day 1: 74
+Day 2: 35
+Assignment Submissions: TBD
+📚 Topics Covered During the Session
+Day 1: Fundamentals of After Eﬀects
+Introduction to After Eﬀects & its Interface
+Working with the Timeline
+Cropping & Trimming Footage
+Adding & Adjusting Audio
+Using Markers for Precision Editing
+Working with Multiple Screens
+Adjusting Playback Speed (Slow/Fast Motion)
+Previewing Edits Eﬃciently
+Understanding Transform Controls
+Exporting Final Projects
+Day 2: Practical Application & Advanced Editing
+Editing Pre-Made Templates
+Modifying & Customizing Animations
+Working with Keyframes & Motion Eﬀects
+Best Practices for Rendering & Exporting
+💬 Feedback from Attendees
+The hands-on approach was well-received, helping attendees gain conﬁdence in After Eﬀects
+editing.
+Many expressed interest in joining design and video editing teams for further skill
+development.
+Some attendees requested additional resources for future reference.
+🚧
+🚧 Challenges Faced & Solutions
+󾠮 Software Installation Issues
+Issue: Several attendees had trouble installing After Eﬀects before the session, requiring
+guidance from the volunteers.
+Solution: A detailed installation guide was shared.
+󾠯 Access to High-Quality Templates
+Issue: Finding quality templates was a challenge for some students.
+Solution: A list of reliable template websites was provided, ensuring easy access to free and
+premium assets.
+🔮 Suggestions for Future Events
+Introductory SIGs on other video editing software such as Premiere Pro and DaVinci Resolve.

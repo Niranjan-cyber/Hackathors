@@ -59,8 +59,8 @@ const Index = () => {
     answers: {},
     timeSpent: 0
   });
+  // This state will now correctly hold our single promise
   const [questionsPromise, setQuestionsPromise] = useState<Promise<any[]> | null>(null);
-  const [isWaiting, setIsWaiting] = useState(false);
 
   const handleFileSelect = (file: File) => {
     setConfig(prev => ({ ...prev, file }));
@@ -81,47 +81,50 @@ const Index = () => {
     setCurrentStep('count');
   };
 
+  // --- MODIFICATION 1: Start API call and save the promise to state ---
   const handleQuestionCountSelect = (questionCount: number) => {
+    // Update config first
     setConfig(prev => ({ ...prev, questionCount }));
-    setCurrentStep('timer');
-  };
 
-  const handleTimerSelect = (timeLimit: number | null) => {
-    setConfig(prev => ({ ...prev, timeLimit }));
-
-    // Start API call
+    // Prepare and start the API call
     const formData = new FormData();
+    // Use the latest state values by accessing them directly from `config`
     formData.append('topics', JSON.stringify(config.topics));
     formData.append('difficulty', config.difficulty);
-    formData.append('num_questions', config.questionCount.toString());
+    formData.append('num_questions', questionCount.toString());
+    
+    console.log("Sent request to generate questions from QuestionCountSelection...");
 
-    const questionsPromise = fetch('http://localhost:8000/generate-questions/', {
+    const promise = fetch('http://localhost:8000/generate-questions/', {
       method: 'POST',
       body: formData,
     })
       .then(res => {
-        if (!res.ok) throw new Error('Failed to generate questions');
+        if (!res.ok) {
+            console.error('API response was not OK.');
+            throw new Error('Failed to generate questions');
+        }
         return res.json();
       })
-      .catch(() => null);
+      .catch((err) => {
+        console.error('Fetch error:', err);
+        // Return null on failure so the next component knows to use mock data
+        return null; 
+      });
 
-    setQuestionsPromise(questionsPromise);
+    // Save the entire promise to state
+    setQuestionsPromise(promise);
+    
+    // Move to the next step
+    setCurrentStep('timer');
+  };
 
-    // Start a short timer (1s)
-    let didTimeout = false;
-    setTimeout(() => {
-      didTimeout = true;
-      setIsWaiting(true);
-      setCurrentStep('starting');
-    }, 1000);
-
-    // If API responds before timeout, go directly to test
-    questionsPromise.then(questions => {
-      if (!didTimeout && questions) {
-        setConfig(prev => ({ ...prev, questions }));
-        setCurrentStep('test');
-      }
-    });
+  // --- MODIFICATION 2: Simplify this handler drastically ---
+  const handleTimerSelect = (timeLimit: number | null) => {
+    setConfig(prev => ({ ...prev, timeLimit }));
+    // No need for complex logic here. The promise is already running.
+    // We just move to the 'starting' screen which will act as our loading page.
+    setCurrentStep('starting');
   };
 
   const handleStartTest = (questions?: any[]) => {
@@ -130,28 +133,26 @@ const Index = () => {
     
     // Transform API questions to match the expected format if needed
     const formattedQuestions = finalQuestions.map((q, index) => {
-      if (q.options && typeof q.options === 'object') {
-        // API format: { "A": "...", "B": "...", "C": "...", "D": "..." }
+      // Handle the format from your Python backend: { "question": "...", "options": { "A": "...", ... }, ... }
+      if (q.options && typeof q.options === 'object' && !Array.isArray(q.options)) {
         const optionsArray = Object.values(q.options);
-        const correctAnswerIndex = optionsArray.findIndex((_, i) => {
-          const optionKey = String.fromCharCode(65 + i); // A, B, C, D
-          return optionKey === q.correct_answer;
-        });
+        const correctAnswerKey = q.correct_answer; // e.g., "A"
+        const correctAnswerIndex = Object.keys(q.options).findIndex(key => key === correctAnswerKey);
         
         return {
           id: index,
           question: q.question,
           options: optionsArray,
-          correctAnswer: correctAnswerIndex >= 0 ? correctAnswerIndex : 0,
+          correctAnswer: correctAnswerIndex >= 0 ? correctAnswerIndex : 0, // Fallback to 0 if key not found
           explanation: q.explanation || `Explanation for question ${index + 1}`,
           topic: Array.isArray(q.topics) ? q.topics[0] : q.topics || 'General'
         };
       } else {
-        // Mock format or already formatted
+        // This handles mock data or already formatted data
         return {
           id: index,
           question: q.question,
-          options: q.options || q.optionsArray,
+          options: q.options || [],
           correctAnswer: q.correctAnswer || 0,
           explanation: q.explanation || `Explanation for question ${index + 1}`,
           topic: q.topic || 'General'
@@ -162,8 +163,6 @@ const Index = () => {
     setConfig(prev => ({ ...prev, questions: formattedQuestions }));
     setCurrentStep('test');
   };
-
-
 
   const handleTestSubmit = (answers: Record<number, number>, timeSpent: number) => {
     setConfig(prev => ({ ...prev, answers, timeSpent }));
@@ -182,6 +181,8 @@ const Index = () => {
       answers: {},
       timeSpent: 0
     });
+    // Reset the promise as well
+    setQuestionsPromise(null);
     setCurrentStep('upload');
   };
 
@@ -197,9 +198,14 @@ const Index = () => {
         setCurrentStep('difficulty');
         break;
       case 'timer':
+        // If going back from timer, we should cancel the API call logic.
+        // The simplest way is to clear the promise.
+        setQuestionsPromise(null);
         setCurrentStep('count');
         break;
       case 'starting':
+        // Also clear promise if going back from the final loading screen
+        setQuestionsPromise(null);
         setCurrentStep('timer');
         break;
       default:
@@ -207,6 +213,7 @@ const Index = () => {
     }
   };
 
+  // The rest of your component remains the same
   switch (currentStep) {
     case 'upload':
       return (
@@ -273,6 +280,7 @@ const Index = () => {
           timeLimit={config.timeLimit}
           difficulty={config.difficulty}
           topics={config.topics}
+          // Pass the promise from state
           questionsPromise={questionsPromise}
         />
       );
