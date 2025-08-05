@@ -26,7 +26,7 @@ OLLAMA_PHI3_PID=$!
 echo "🤖 Started Ollama model: phi3 (PID $OLLAMA_PHI3_PID)"
 ollama run llama3 &
 OLLAMA_OH_PID=$!
-echo "🤖 Started Ollama model: openhermes (PID $OLLAMA_OH_PID)"
+echo "🤖 Started Ollama model: llama3 (PID $OLLAMA_OH_PID)"
 
 # Trap to kill ollama models on exit
 trap "echo '🛑 Stopping Ollama models...'; kill $OLLAMA_PHI3_PID $OLLAMA_OH_PID 2>/dev/null" EXIT
