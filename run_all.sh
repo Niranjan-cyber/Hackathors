@@ -1,15 +1,18 @@
 #!/bin/bash
 
-# echo "🔁 Starting backend..."
-# ./backend/start.sh &
-# BACKEND_PID=$!
+# Start backend
+echo "🔄 Starting backend..."
+./backend/start.sh &
+BACKEND_PID=$!
 
-echo "🔁 Starting frontend..."
+# Start frontend
+echo "🔄 Starting frontend..."
 ./frontend/start.sh &
 FRONTEND_PID=$!
 
 # Trap to kill both on Ctrl+C
-trap "echo '🛑 Stopping...'; kill $FRONTEND_PID" EXIT
+trap "echo '🛑 Stopping...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null" EXIT
 
-# Wait to keep script running
-wait
+# Wait for both to exit
+wait $BACKEND_PID
+wait $FRONTEND_PID

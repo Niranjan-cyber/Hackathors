@@ -14,11 +14,21 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
   onNext, 
   onBack, 
   questionCount, 
-  difficulty 
+  difficulty
 }) => {
-  const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState<number | null | 'custom'>(null);
   const [customTime, setCustomTime] = useState<string>('');
   const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
+
+  const handleTimeSelection = (value: number | null | 'custom') => {
+    if (value === 'custom') {
+      setShowCustomInput(true);
+      setSelectedTime('custom');
+    } else {
+      setShowCustomInput(false);
+      setSelectedTime(value);
+    }
+  };
 
   // Calculate recommended time based on difficulty and question count
   const getRecommendedTime = () => {
@@ -38,28 +48,37 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
   const handleCustomTimeSelect = () => {
     if (selectedTime !== 'custom') {
       setShowCustomInput(true);
-      setSelectedTime('custom' as any);
+      setSelectedTime('custom');
     }
   };
 
   const handleCustomTimeChange = (value: string) => {
     setCustomTime(value);
-    // Keep the selected time as 'custom' to maintain the selection state
-    setSelectedTime('custom' as any);
+    setSelectedTime('custom');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const numValue = parseInt(customTime);
+      const numValue = parseInt(customTime.trim());
       if (!isNaN(numValue) && numValue > 0) {
-        // Just update the selected time, don't proceed to next step
         setSelectedTime(numValue);
+        setShowCustomInput(false);
       }
     }
   };
 
-  const timeOptions = [
+  const timeOptions: Array<{
+    value: number | null | 'custom';
+    label: string;
+    description: string;
+    icon: any;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    recommended?: boolean;
+    isCustom?: boolean;
+  }> = [
     {
       value: Math.floor(recommendedTime * 0.5),
       label: 'Speed Round',
@@ -102,7 +121,7 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
 
   const handleNext = () => {
     if (selectedTime === 'custom') {
-      const numValue = parseInt(customTime);
+      const numValue = parseInt(customTime.trim());
       onNext(numValue);
     } else {
       onNext(selectedTime);
@@ -129,9 +148,9 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
   };
 
   const isNextDisabled = () => {
-    if (selectedTime === undefined) return true;
+    if (selectedTime === null) return true;
     if (selectedTime === 'custom') {
-      const numValue = parseInt(customTime);
+      const numValue = parseInt(customTime.trim());
       return isNaN(numValue) || numValue <= 0;
     }
     return false;
@@ -177,7 +196,7 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
         </div>
 
         {/* Selected Time Display */}
-        {selectedTime !== undefined && (
+        {selectedTime !== null && (
           <Card className="card-gradient border-primary/20 p-8 text-center pulse-glow">
             <div className="space-y-2">
               <div className="text-4xl font-bold text-primary">
@@ -186,14 +205,14 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
               <div className="text-muted-foreground">
                 Selected Time Limit
               </div>
-              {selectedTime !== null && selectedTime !== 'custom' && (
+              {typeof selectedTime === 'number' && selectedTime !== null && (
                 <div className="text-sm text-muted-foreground">
                   Approximately {Math.floor(selectedTime / questionCount)} minutes per question
                 </div>
               )}
-              {selectedTime === 'custom' && customTime && !isNaN(parseInt(customTime)) && parseInt(customTime) > 0 && (
+              {selectedTime === 'custom' && customTime && !isNaN(parseInt(customTime.trim())) && parseInt(customTime.trim()) > 0 && (
                 <div className="text-sm text-muted-foreground">
-                  Approximately {Math.floor(parseInt(customTime) / questionCount)} minutes per question
+                  Approximately {Math.floor(parseInt(customTime.trim()) / questionCount)} minutes per question
                 </div>
               )}
             </div>
@@ -209,7 +228,7 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
             return (
               <Card
                 key={index}
-                onClick={() => option.isCustom ? handleCustomTimeSelect() : setSelectedTime(option.value)}
+                onClick={() => handleTimeSelection(option.value)}
                 className={`card-gradient p-8 cursor-pointer transition-all duration-300 hover-lift border-2 ${
                   isSelected
                     ? `${option.borderColor.replace('/30', '')} ${option.bgColor.replace('/10', '/20')} glow-effect`
@@ -230,7 +249,7 @@ export const TimerSelection: React.FC<TimerSelectionProps> = ({
                     <h3 className={`text-xl font-bold ${isSelected ? option.color : 'text-foreground'}`}>
                       {option.label}
                     </h3>
-                    {option.value && !option.isCustom && (
+                    {typeof option.value === 'number' && !option.isCustom && (
                       <div className="text-2xl font-bold text-primary mt-1">
                         {formatTime(option.value)}
                       </div>

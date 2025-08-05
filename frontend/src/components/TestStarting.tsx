@@ -7,6 +7,7 @@ interface TestStartingProps {
   timeLimit: number | null;
   difficulty: string;
   topics: string[];
+  questionsPromise?: Promise<any[]> | null;
 }
 
 export const TestStarting: React.FC<TestStartingProps> = ({ 
@@ -14,55 +15,58 @@ export const TestStarting: React.FC<TestStartingProps> = ({
   questionCount, 
   timeLimit, 
   difficulty, 
-  topics 
+  topics,
+  questionsPromise
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let didFinish = false;
+    if (questionsPromise) {
+      setIsLoading(true);
+      setError(null);
+      questionsPromise.then(questions => {
+        didFinish = true;
+        if (questions) {
+          setTimeout(() => onStart(questions), 1000);
+        } else {
+          setError('Failed to generate questions');
+          setTimeout(() => onStart(), 2000);
+        }
+        setIsLoading(false);
+      });
+      return () => { didFinish = true; };
+    }
+    // fallback: old behavior
     const generateQuestions = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
-        // Create form data for the API call
         const formData = new FormData();
         formData.append('topics', JSON.stringify(topics));
         formData.append('difficulty', difficulty);
         formData.append('num_questions', questionCount.toString());
-
-        // Make API call to generate questions
         const response = await fetch('http://localhost:8000/generate-questions/', {
           method: 'POST',
           body: formData,
         });
-
         if (!response.ok) {
           throw new Error(`Failed to generate questions: ${response.statusText}`);
         }
-
         const questions = await response.json();
-        
-        // Wait a bit to show the loading animation
-        setTimeout(() => {
-          onStart(questions);
-        }, 1000);
-
+        setTimeout(() => onStart(questions), 1000);
       } catch (err) {
-        console.error('Error generating questions:', err);
         setError(err instanceof Error ? err.message : 'Failed to generate questions');
-        
-        // Fallback: start test without questions after error
-        setTimeout(() => {
-          onStart();
-        }, 2000);
+        setTimeout(() => onStart(), 2000);
       } finally {
         setIsLoading(false);
       }
     };
-
     generateQuestions();
-  }, [onStart, questionCount, difficulty, topics]);
+  }, [onStart, questionCount, difficulty, topics, questionsPromise]);
+
+
 
   return (
     <div className="min-h-screen bg-gradient-hero p-6 flex items-center justify-center">

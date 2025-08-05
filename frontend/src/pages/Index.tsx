@@ -9,6 +9,7 @@ import { TestStarting } from '@/components/TestStarting';
 import { TestInterface } from '@/components/TestInterface';
 import { Results } from '@/components/Results';
 
+
 // Mock question data (fallback if API fails)
 const generateMockQuestions = (topics: string[], difficulty: string, count: number) => {
   const questions = [];
@@ -58,6 +59,8 @@ const Index = () => {
     answers: {},
     timeSpent: 0
   });
+  const [questionsPromise, setQuestionsPromise] = useState<Promise<any[]> | null>(null);
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const handleFileSelect = (file: File) => {
     setConfig(prev => ({ ...prev, file }));
@@ -85,7 +88,40 @@ const Index = () => {
 
   const handleTimerSelect = (timeLimit: number | null) => {
     setConfig(prev => ({ ...prev, timeLimit }));
-    setCurrentStep('starting');
+
+    // Start API call
+    const formData = new FormData();
+    formData.append('topics', JSON.stringify(config.topics));
+    formData.append('difficulty', config.difficulty);
+    formData.append('num_questions', config.questionCount.toString());
+
+    const questionsPromise = fetch('http://localhost:8000/generate-questions/', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to generate questions');
+        return res.json();
+      })
+      .catch(() => null);
+
+    setQuestionsPromise(questionsPromise);
+
+    // Start a short timer (1s)
+    let didTimeout = false;
+    setTimeout(() => {
+      didTimeout = true;
+      setIsWaiting(true);
+      setCurrentStep('starting');
+    }, 1000);
+
+    // If API responds before timeout, go directly to test
+    questionsPromise.then(questions => {
+      if (!didTimeout && questions) {
+        setConfig(prev => ({ ...prev, questions }));
+        setCurrentStep('test');
+      }
+    });
   };
 
   const handleStartTest = (questions?: any[]) => {
@@ -126,6 +162,8 @@ const Index = () => {
     setConfig(prev => ({ ...prev, questions: formattedQuestions }));
     setCurrentStep('test');
   };
+
+
 
   const handleTestSubmit = (answers: Record<number, number>, timeSpent: number) => {
     setConfig(prev => ({ ...prev, answers, timeSpent }));
@@ -235,6 +273,7 @@ const Index = () => {
           timeLimit={config.timeLimit}
           difficulty={config.difficulty}
           topics={config.topics}
+          questionsPromise={questionsPromise}
         />
       );
 
