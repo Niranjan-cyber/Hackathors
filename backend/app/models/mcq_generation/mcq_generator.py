@@ -27,8 +27,9 @@ def generate_payload(userinput_response):
             userinput_response["difficulty"],
             userinput_response["num_questions"],
         ),
-        "system": f"You are a careful and expert MCQ generator. You follow JSON schemas strictly and return a list of exactly {userinput_response['num_questions']} questions where each question in the list is a JSON object without any commentary or surrounding text.",
+        "system": f"You are a careful and expert MCQ generator. You follow JSON schemas strictly and return a JSON array of questions where each question in the list is a JSON object without any commentary or surrounding text.",
         "stream": False,
+        "temperature": 0.3,
     }
     return payload
 
