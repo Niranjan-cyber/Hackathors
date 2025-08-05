@@ -17,23 +17,11 @@ export const TopicSelection: React.FC<TopicSelectionProps> = ({ onNext, onBack, 
   const [customTopic, setCustomTopic] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Ensure detectedTopics is always an array
-  const safeDetectedTopics = Array.isArray(detectedTopics) ? detectedTopics : [];
+  // Use only the topics detected by the AI. There is no fallback list.
+  const availableTopics = Array.isArray(detectedTopics) ? detectedTopics : [];
 
-  // Base list of topics
-  const baseTopics = [
-      "Machine Learning", "Data Structures", "Algorithms", "Computer Networks",
-      "Database Management", "Software Engineering", "Artificial Intelligence",
-      "Operating Systems", "Web Development", "Mobile Development", "Cloud Computing",
-      "Cybersecurity", "Human-Computer Interaction", "Computer Graphics"
-  ];
-
-  // Combine detected topics with the base list and ensure uniqueness
-  const availableTopics = [...safeDetectedTopics, ...baseTopics];
-  const uniqueTopics = Array.from(new Set(availableTopics));
-
-  // Filter topics based on the search term
-  const filteredTopics = uniqueTopics.filter(topic =>
+  // Filter the available topics based on the search term
+  const filteredTopics = availableTopics.filter(topic =>
     topic.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -47,10 +35,6 @@ export const TopicSelection: React.FC<TopicSelectionProps> = ({ onNext, onBack, 
 
   const addCustomTopic = () => {
     if (customTopic.trim() && !selectedTopics.includes(customTopic.trim())) {
-      // Add to the list of available topics as well so it appears in the grid
-      if (!uniqueTopics.includes(customTopic.trim())) {
-          uniqueTopics.unshift(customTopic.trim());
-      }
       setSelectedTopics(prev => [...prev, customTopic.trim()]);
       setCustomTopic('');
     }
@@ -58,7 +42,7 @@ export const TopicSelection: React.FC<TopicSelectionProps> = ({ onNext, onBack, 
 
   const handleNext = () => {
     if (selectedTopics.length === 0) {
-      return; // Or show a message
+      return;
     }
     onNext(selectedTopics);
   };
@@ -87,25 +71,27 @@ export const TopicSelection: React.FC<TopicSelectionProps> = ({ onNext, onBack, 
             Select Topics
           </h1>
           <p className="text-xl text-muted-foreground">
-            {safeDetectedTopics.length > 0 
-              ? "Choose your topics below. We've highlighted the ones detected in your document."
-              : "Choose the topics you want to generate questions for."
+            {availableTopics.length > 0
+              ? "Select from the topics detected in your document, or add your own."
+              : "No topics detected. Please add custom topics to proceed."
             }
           </p>
         </div>
 
-        {/* Search Bar */}
-        <Card className="card-gradient border-primary/20 p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input
-              placeholder="Search topics..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-input/50 border-primary/30 text-foreground"
-            />
-          </div>
-        </Card>
+        {/* Search Bar (only shown if there are topics to search) */}
+        {availableTopics.length > 0 && (
+          <Card className="card-gradient border-primary/20 p-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Input
+                placeholder="Search detected topics..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-input/50 border-primary/30 text-foreground"
+              />
+            </div>
+          </Card>
+        )}
 
         {/* Selected Topics */}
         {selectedTopics.length > 0 && (
@@ -128,38 +114,38 @@ export const TopicSelection: React.FC<TopicSelectionProps> = ({ onNext, onBack, 
             </div>
           </Card>
         )}
-
-        {/* Unified Topics Grid */}
-        <Card className="card-gradient border-primary/20 p-8 hover-lift glow-effect">
-          <div className="space-y-6">
-            <h3 className="text-2xl font-semibold text-foreground mb-4">
-              Available Topics
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredTopics.map((topic) => {
-                const isSelected = selectedTopics.includes(topic);
-                const isDetected = safeDetectedTopics.includes(topic);
-
-                return (
-                  <button
-                    key={topic}
-                    onClick={() => toggleTopic(topic)}
-                    className={`p-4 rounded-lg border-2 transition-all duration-300 font-medium hover-lift ${
-                      isSelected
-                        ? (isDetected ? 'bg-success text-success-foreground border-success shadow-lg scale-105' : 'bg-primary text-primary-foreground border-primary shadow-lg scale-105')
-                        : (isDetected ? 'bg-card text-card-foreground border-success/30 hover:border-success/60 hover:bg-success/10' : 'bg-card text-card-foreground border-primary/30 hover:border-primary/60 hover:bg-primary/10')
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>{topic}</span>
-                      {isSelected && <Check className="w-4 h-4 ml-2" />}
-                    </div>
-                  </button>
-                );
-              })}
+        
+        {/* Detected Topics Grid (only shown if there are topics) */}
+        {availableTopics.length > 0 && (
+          <Card className="card-gradient border-primary/20 p-8 hover-lift glow-effect">
+            <div className="space-y-6">
+              <h3 className="text-2xl font-semibold text-foreground mb-4">
+                Detected Topics
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredTopics.map((topic) => {
+                  const isSelected = selectedTopics.includes(topic);
+                  return (
+                    <button
+                      key={topic}
+                      onClick={() => toggleTopic(topic)}
+                      className={`p-4 rounded-lg border-2 transition-all duration-300 font-medium hover-lift ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-105'
+                          : 'bg-card text-card-foreground border-primary/30 hover:border-primary/60 hover:bg-primary/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{topic}</span>
+                        {isSelected && <Check className="w-4 h-4 ml-2" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Custom Topic Input */}
         <Card className="card-gradient border-primary/20 p-6">

@@ -24,7 +24,7 @@ fi
 ollama run phi3 &
 OLLAMA_PHI3_PID=$!
 echo "🤖 Started Ollama model: phi3 (PID $OLLAMA_PHI3_PID)"
-ollama run openhermes &
+ollama run llama3 &
 OLLAMA_OH_PID=$!
 echo "🤖 Started Ollama model: openhermes (PID $OLLAMA_OH_PID)"
 
