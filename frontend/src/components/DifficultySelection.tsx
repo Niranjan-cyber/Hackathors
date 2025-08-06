@@ -42,16 +42,6 @@ export const DifficultySelection: React.FC<DifficultySelectionProps> = ({ onNext
       bgColor: 'bg-destructive/10',
       borderColor: 'border-destructive/30',
       hoverColor: 'hover:border-destructive hover:bg-destructive/20'
-    },
-    {
-      id: 'expert',
-      name: 'Expert',
-      icon: Star,
-      description: 'Professional level with complex problem solving',
-      color: 'text-accent',
-      bgColor: 'bg-accent/10',
-      borderColor: 'border-accent/30',
-      hoverColor: 'hover:border-accent hover:bg-accent/20'
     }
   ];
 
@@ -105,7 +95,7 @@ export const DifficultySelection: React.FC<DifficultySelectionProps> = ({ onNext
         </div>
 
         {/* Difficulty Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {difficulties.map((difficulty) => {
             const Icon = difficulty.icon;
             const isSelected = selectedDifficulty === difficulty.id;
@@ -135,11 +125,11 @@ export const DifficultySelection: React.FC<DifficultySelectionProps> = ({ onNext
                   
                   {/* Difficulty Indicators */}
                   <div className="flex justify-center space-x-1">
-                    {[...Array(4)].map((_, index) => (
+                    {[...Array(3)].map((_, index) => (
                       <div
                         key={index}
                         className={`w-2 h-6 rounded-full ${
-                          index < (['easy', 'medium', 'hard', 'expert'].indexOf(difficulty.id) + 1)
+                          index < (['easy', 'medium', 'hard'].indexOf(difficulty.id) + 1)
                             ? difficulty.color.replace('text-', 'bg-')
                             : 'bg-muted'
                         }`}
@@ -164,7 +154,7 @@ export const DifficultySelection: React.FC<DifficultySelectionProps> = ({ onNext
           <h3 className="text-lg font-semibold text-foreground mb-2">
             Difficulty Guide
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
             <div>
               <span className="text-success font-medium">Easy:</span> Recall & Recognition
             </div>
@@ -173,9 +163,6 @@ export const DifficultySelection: React.FC<DifficultySelectionProps> = ({ onNext
             </div>
             <div>
               <span className="text-destructive font-medium">Hard:</span> Synthesis & Evaluation
-            </div>
-            <div>
-              <span className="text-accent font-medium">Expert:</span> Complex Problem Solving
             </div>
           </div>
         </Card>
