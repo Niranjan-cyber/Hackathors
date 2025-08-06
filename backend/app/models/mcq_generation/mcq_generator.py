@@ -5,7 +5,7 @@ import time
 
 TIMEOUT = 100
 MAX_TRIES = 3
-MODEL_NAME = "openhermes"
+MODEL_NAME = "llama3.1"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 PATH_TO_TEXT = "app/models/mcq_generation/OCR_text.txt"
 
