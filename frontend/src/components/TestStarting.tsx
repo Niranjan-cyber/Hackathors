@@ -7,7 +7,8 @@ interface TestStartingProps {
   timeLimit: number | null;
   difficulty: string;
   topics: string[];
-  questionsPromise?: Promise<any[]> | null;
+  // This promise is now guaranteed to be passed from the parent
+  questionsPromise: Promise<any[]> | null;
 }
 
 export const TestStarting: React.FC<TestStartingProps> = ({ 
@@ -22,51 +23,35 @@ export const TestStarting: React.FC<TestStartingProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let didFinish = false;
+    // This component now ONLY reacts to the promise it's given.
+    // It does not make its own API calls.
     if (questionsPromise) {
       setIsLoading(true);
       setError(null);
+
       questionsPromise.then(questions => {
-        didFinish = true;
         if (questions) {
-          setTimeout(() => onStart(questions), 1000);
+          // Success: API returned questions. Wait a moment then start the test.
+          setTimeout(() => onStart(questions), 1500); // Slightly longer delay for better UX
         } else {
-          setError('Failed to generate questions');
-          setTimeout(() => onStart(), 2000);
+          // Failure: API call failed (promise resolved to null). Show error.
+          setError('Could not generate questions. Starting with mock questions.');
+          // Start the test with mock data after showing the error for a bit.
+          setTimeout(() => onStart(), 2000); 
         }
+      }).finally(() => {
+        // This will run after .then() or .catch()
         setIsLoading(false);
       });
-      return () => { didFinish = true; };
-    }
-    // fallback: old behavior
-    const generateQuestions = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const formData = new FormData();
-        formData.append('topics', JSON.stringify(topics));
-        formData.append('difficulty', difficulty);
-        formData.append('num_questions', questionCount.toString());
-        const response = await fetch('http://localhost:8000/generate-questions/', {
-          method: 'POST',
-          body: formData,
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to generate questions: ${response.statusText}`);
-        }
-        const questions = await response.json();
-        setTimeout(() => onStart(questions), 1000);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to generate questions');
+
+    } else {
+        // This case might happen if the user navigates directly to this page or back-and-forth.
+        setError("Something went wrong. Starting with mock questions.");
         setTimeout(() => onStart(), 2000);
-      } finally {
         setIsLoading(false);
-      }
-    };
-    generateQuestions();
-  }, [onStart, questionCount, difficulty, topics, questionsPromise]);
-
-
+    }
+  // The effect should only depend on the promise itself and the onStart callback.
+  }, [questionsPromise, onStart]);
 
   return (
     <div className="min-h-screen bg-gradient-hero p-6 flex items-center justify-center">
@@ -85,7 +70,7 @@ export const TestStarting: React.FC<TestStartingProps> = ({
         ))}
       </div>
 
-      <div className="text-center space-y-8">
+      <div className="text-center space-y-8 z-10">
         {/* Brain Loading Icon */}
         <div className="flex justify-center">
           <Brain className="w-24 h-24 text-primary animate-pulse" />
@@ -93,22 +78,21 @@ export const TestStarting: React.FC<TestStartingProps> = ({
 
         {/* Starting Test Text */}
         <h1 className="text-4xl font-bold text-gradient">
-          {error ? 'Error Generating Questions' : 'Generating Questions'}
+          {error ? 'Error' : 'Generating Your Test'}
         </h1>
 
-        {/* Error Message */}
-        {error && (
-          <p className="text-red-500 text-lg max-w-md mx-auto">
-            {error}
-          </p>
-        )}
+        <p className="text-lg text-slate-300 max-w-md mx-auto">
+          {error ? error : `Crafting ${questionCount} questions about ${topics.join(', ')} at ${difficulty} difficulty...`}
+        </p>
 
-        {/* Loading dots */}
-        <div className="flex justify-center space-x-2">
-          <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-        </div>
+        {/* Loading dots (only show if not error) */}
+        {!error && (
+            <div className="flex justify-center space-x-2">
+                <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+        )}
       </div>
     </div>
   );

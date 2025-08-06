@@ -3,9 +3,9 @@ import requests
 import json
 import time
 
-TIMEOUT = 100
+TIMEOUT = 200
 MAX_TRIES = 3
-MODEL_NAME = "openhermes"
+MODEL_NAME = "llama3"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 PATH_TO_TEXT = "app/models/mcq_generation/OCR_text.txt"
 
@@ -27,8 +27,9 @@ def generate_payload(userinput_response):
             userinput_response["difficulty"],
             userinput_response["num_questions"],
         ),
-        "system": f"You are a careful and expert MCQ generator. You follow JSON schemas strictly and return a list of exactly {userinput_response['num_questions']} questions where each question in the list is a JSON object without any commentary or surrounding text.",
+        "system": f"You are a careful and expert MCQ generator. You follow JSON schemas strictly and return a JSON array of questions where each question in the list is a JSON object without any commentary or surrounding text.",
         "stream": False,
+        "temperature": 0.3,
     }
     return payload
 
