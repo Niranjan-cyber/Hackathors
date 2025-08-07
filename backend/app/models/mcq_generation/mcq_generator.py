@@ -3,11 +3,15 @@ import requests
 import json
 import time
 
+# Constants
 TIMEOUT = 200
 MAX_TRIES = 3
 MODEL_NAME = "llama3.1"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 PATH_TO_TEXT = "app/models/mcq_generation/OCR_text.txt"
+
+# Some placeholder variable(s)
+num_q = 30
 
 
 def log(text):
@@ -64,12 +68,18 @@ def ollama_prompt(input_dict):
     return None
 
 
-def get_json(response_text):
+def get_json(response_text: str):
     try:
+        # Preprocessing
+        response_text = response_text[
+            response_text.find("["): response_text.rfind("]") + 1
+        ]
+        # Parsing
         parsed = json.loads(response_text)
         return parsed
     except json.JSONDecodeError:
-        log("Validation failed: Response is not valid JSON.")
+        log("Validation failed: Response is not valid JSON. Printing the recieved response:")
+        log(response_text)
         return None
 
 
@@ -79,6 +89,14 @@ def validate_json(json_raw):
             log("Validation failed: Response is not a list of questions.")
             return False
 
+        log(
+            f"Recieved a JSON list with {len(json_raw)} questions, extracting first {
+                num_q
+            } questions..."
+        )
+        if len(json_raw) > num_q:
+            json_raw = json_raw[:num_q]
+        log(f"Final length of JSON list is: {len(json_raw)} questions")
         for idx, item in enumerate(json_raw):
             required_fields = {
                 "question",
@@ -116,7 +134,8 @@ def validate_json(json_raw):
 
 
 def main(input_response):
-    # Use the input_response as provided, only add format if needed
+    # KEEP THIS BEFORE generate_payload CALL
+    num_q = input_response["num_questions"]
     input_response = generate_payload(input_response)
     tries = 0
     while tries < MAX_TRIES:
