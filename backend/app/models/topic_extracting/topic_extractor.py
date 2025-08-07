@@ -1,7 +1,12 @@
+import spacy
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import fitz  # PyMuPDF
 import re
 import ollama
 import json
+
+# Constants
+MODEL_NAME = "llama3.1"
 
 
 def clean_topic_text(topic):
@@ -21,7 +26,7 @@ def clean_topic_text(topic):
 # ----------------------------
 # Query LLM using Ollama
 # ----------------------------
-def query_ollama_chunk(chunk, model="phi3"):
+def query_ollama_chunk(chunk, model=MODEL_NAME):
     prompt = build_topic_prompt(chunk)
     response = ollama.chat(
         model=model,
@@ -78,7 +83,7 @@ def extract_text_from_pdf(pdf_path):
 def split_into_chunks(text, max_words=500):
     words = text.split()
     chunks = [
-        " ".join(words[i : i + max_words]) for i in range(0, len(words), max_words)
+        " ".join(words[i: i + max_words]) for i in range(0, len(words), max_words)
     ]
     return chunks
 
@@ -86,10 +91,9 @@ def split_into_chunks(text, max_words=500):
 # ----------------------------
 # Step 3: Extract and Save Topics
 # ----------------------------
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def extract_topics_from_pdf_text(text, model="phi3", output_json="topics.json"):
+def extract_topics_from_pdf_text(text, model=MODEL_NAME, output_json="topics.json"):
     chunks = split_into_chunks(text)
     all_topics = set()
 
@@ -122,10 +126,8 @@ def extract_topics_from_pdf_text(text, model="phi3", output_json="topics.json"):
                     all_topics.add(cleaned)
 
     selected_topics = list(all_topics)[:10]
-    return {"topics":selected_topics}
+    return {"topics": selected_topics}
 
-
-import spacy
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -148,4 +150,4 @@ def clean_and_extract_keywords(topic_text, max_keywords=10):
 if __name__ == "__main__":
     pdf_path = ""  # Change this
     text = extract_text_from_pdf(pdf_path)
-    extract_topics_from_pdf_text(text, model="phi3");
+    extract_topics_from_pdf_text(text, model=MODEL_NAME)
