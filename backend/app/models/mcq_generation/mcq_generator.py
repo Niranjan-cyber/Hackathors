@@ -10,9 +10,6 @@ MODEL_NAME = "llama3.1"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 PATH_TO_TEXT = "app/models/mcq_generation/OCR_text.txt"
 
-# Some placeholder variable(s)
-num_q = 30
-
 
 def log(text):
     print(f"{__name__} - {text}")
@@ -83,7 +80,7 @@ def get_json(response_text: str):
         return None
 
 
-def validate_json(json_raw):
+def validate_json(json_raw, n_questions):
     try:
         if not isinstance(json_raw, list):
             log("Validation failed: Response is not a list of questions.")
@@ -91,11 +88,11 @@ def validate_json(json_raw):
 
         log(
             f"Recieved a JSON list with {len(json_raw)} questions, extracting first {
-                num_q
+                n_questions
             } questions..."
         )
-        if len(json_raw) > num_q:
-            json_raw = json_raw[:num_q]
+        if len(json_raw) > n_questions:
+            json_raw = json_raw[:n_questions]
         log(f"Final length of JSON list is: {len(json_raw)} questions")
         for idx, item in enumerate(json_raw):
             required_fields = {
@@ -146,7 +143,7 @@ def main(input_response):
             tries += 1
             continue
         parsed_json = get_json(llm_output)
-        if parsed_json and validate_json(parsed_json):
+        if parsed_json and validate_json(parsed_json, num_q):
             log("Returning the JSON...")
             return parsed_json
         log(f"Reprompting...")
