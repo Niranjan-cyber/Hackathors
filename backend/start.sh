@@ -25,11 +25,11 @@ ollama run phi3 &
 OLLAMA_PHI3_PID=$!
 echo "🤖 Started Ollama model: phi3 (PID $OLLAMA_PHI3_PID)"
 ollama run llama3.1 &
-OLLAMA_OH_PID=$!
-echo "🤖 Started Ollama model: llama3.1 (PID $OLLAMA_OH_PID)"
+OLLAMA_LLAMA_PID=$!
+echo "🤖 Started Ollama model: llama3.1 (PID $OLLAMA_LLAMA_PID)"
 
 # Trap to kill ollama models on exit
-trap "echo '🛑 Stopping Ollama models...'; kill $OLLAMA_PHI3_PID $OLLAMA_OH_PID 2>/dev/null" EXIT
+trap "echo '🛑 Stopping Ollama models...'; kill $OLLAMA_PHI3_PID $OLLAMA_LLAMA_PID 2>/dev/null" EXIT
 
 # Start FastAPI backend
 echo "🚀 Starting FastAPI backend..."
