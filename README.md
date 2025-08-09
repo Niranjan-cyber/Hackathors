@@ -148,21 +148,46 @@ Parameters:
 
 ## 📸 Screenshots
 
-*Screenshots will be added here to showcase the application interface and user experience.*
+Add images to `docs/screenshots/` and they will render here. Common formats: `.jpeg`, `.png`, `.webp`.
 
-### Application Flow
-- **File Upload Interface**
-- **Topic Selection Screen**
-- **Test Configuration**
+### Application Screens
+
+- **Home**
+
+  ![Home page](docs/screenshots/home_page.jpeg)
+
+- **Topic Selection**
+
+  ![Topic selection](docs/screenshots/topic_selection.jpeg)
+
+- **Difficulty Selection**
+
+  ![Difficulty selection](docs/screenshots/difficulty_selection.jpeg)
+
+- **Question Count Selection**
+
+  ![Number of questions selection](docs/screenshots/number_of_question.jpeg)
+
+- **Timer Selection**
+
+  ![Timer selection](docs/screenshots/timer_selection.jpeg)
+
 - **Question Interface**
+
+  ![Question 1](docs/screenshots/question1.jpeg)
+  ![Question 2](docs/screenshots/question2.jpeg)
+  ![Question 3](docs/screenshots/question3.jpeg)
+
 - **Results Display**
 
-*Note: Screenshots will be updated as the application evolves.*
+  ![Results display](docs/screenshots/result.jpeg)
 
 
 ### Project Structure
 ```
 Hackathors/
+├── docs/
+│   └── screenshots/               # README images
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI application
