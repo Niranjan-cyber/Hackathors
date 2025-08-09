@@ -146,10 +146,6 @@ Parameters:
 - num_questions: integer (1-50)
 ```
 
-## 📸 Screenshots
-
-Add images to `docs/screenshots/` and they will render here. Common formats: `.jpeg`, `.png`, `.webp`.
-
 ### Application Screens
 
 - **Home**
