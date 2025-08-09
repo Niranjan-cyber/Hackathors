@@ -66,12 +66,11 @@ Constraints:
 - Repeating because this is very important, GIVE EXACTLY {
         number_of_questions
     } QUESTIONS in the array.
-- Respond with ONLY the formatted JSON object. No commentary, explanation or surrounding text.
+- Respond with ONLY the formatted JSON object following the exact format mentioned before. No commentary, explanation or surrounding text.
 
 ###
 An example will now be given to you. Notice how every question follows the format strictly. Notice how the explanation explains all the options. Notice how the distractors are not too obvious to be wrong.
-Even if the example only has an array of 2 questions, remember that you have to give an array of exactly
-{number_of_questions} questions
+Even if the example only has an array of 2 questions, remember that you have to give an array of exactly {number_of_questions} questions
 Examples of formatted MCQ question arrays
 
 {give_example(difficulty)}
