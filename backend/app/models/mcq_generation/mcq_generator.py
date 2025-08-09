@@ -3,6 +3,7 @@ import requests
 import json
 import time
 
+# Constants
 TIMEOUT = 200
 MAX_TRIES = 3
 MODEL_NAME = "llama3.1"
@@ -64,21 +65,35 @@ def ollama_prompt(input_dict):
     return None
 
 
-def get_json(response_text):
+def get_json(response_text: str):
     try:
+        # Preprocessing
+        response_text = response_text[
+            response_text.find("["): response_text.rfind("]") + 1
+        ]
+        # Parsing
         parsed = json.loads(response_text)
         return parsed
     except json.JSONDecodeError:
-        log("Validation failed: Response is not valid JSON.")
+        log("Validation failed: Response is not valid JSON. Printing the recieved response:")
+        log(response_text)
         return None
 
 
-def validate_json(json_raw):
+def validate_json(json_raw, n_questions):
     try:
         if not isinstance(json_raw, list):
             log("Validation failed: Response is not a list of questions.")
             return False
 
+        log(
+            f"Recieved a JSON list with {len(json_raw)} questions, extracting first {
+                n_questions
+            } questions..."
+        )
+        if len(json_raw) > n_questions:
+            json_raw = json_raw[:n_questions]
+        log(f"Final length of JSON list is: {len(json_raw)} questions")
         for idx, item in enumerate(json_raw):
             required_fields = {
                 "question",
@@ -116,7 +131,8 @@ def validate_json(json_raw):
 
 
 def main(input_response):
-    # Use the input_response as provided, only add format if needed
+    # KEEP THIS BEFORE generate_payload CALL
+    num_q = input_response["num_questions"]
     input_response = generate_payload(input_response)
     tries = 0
     while tries < MAX_TRIES:
@@ -127,7 +143,7 @@ def main(input_response):
             tries += 1
             continue
         parsed_json = get_json(llm_output)
-        if parsed_json and validate_json(parsed_json):
+        if parsed_json and validate_json(parsed_json, num_q):
             log("Returning the JSON...")
             return parsed_json
         log(f"Reprompting...")
