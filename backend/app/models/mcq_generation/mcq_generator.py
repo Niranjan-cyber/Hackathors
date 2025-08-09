@@ -80,20 +80,12 @@ def get_json(response_text: str):
         return None
 
 
-def validate_json(json_raw, n_questions):
+def validate_json(json_raw):
     try:
         if not isinstance(json_raw, list):
             log("Validation failed: Response is not a list of questions.")
             return False
 
-        log(
-            f"Recieved a JSON list with {len(json_raw)} questions, extracting first {
-                n_questions
-            } questions..."
-        )
-        if len(json_raw) > n_questions:
-            json_raw = json_raw[:n_questions]
-        log(f"Final length of JSON list is: {len(json_raw)} questions")
         for idx, item in enumerate(json_raw):
             required_fields = {
                 "question",
@@ -143,7 +135,16 @@ def main(input_response):
             tries += 1
             continue
         parsed_json = get_json(llm_output)
-        if parsed_json and validate_json(parsed_json, num_q):
+        if parsed_json and validate_json(parsed_json):
+            log(
+                f"Recieved a JSON list with {len(parsed_json)} questions, extracting first {
+                    num_q
+                } questions..."
+            )
+            if len(parsed_json) > num_q:
+                parsed_json = parsed_json[:num_q]
+            log(f"Final length of JSON list is: {len(parsed_json)} questions")
+
             log("Returning the JSON...")
             return parsed_json
         log(f"Reprompting...")
