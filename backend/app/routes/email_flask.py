@@ -6,6 +6,7 @@ from email.mime.application import MIMEApplication
 
 app = Flask(__name__)
 
+
 def send_email(to_email, report_data):
     from_email = "your-email@example.com"
     from_password = "your-email-password" # Use environment variables!
