@@ -1,4 +1,4 @@
-# Hackathors - AI-Powered MCQ Generator
+# Hackathors - LLM-Powered MCQ Generator
 
 An intelligent web application that automatically generates Multiple Choice Questions (MCQs) from PDF documents using AI. Built for the PISB Hackathon, this tool helps educators and students create practice tests from their study materials.
 
