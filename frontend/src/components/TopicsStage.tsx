@@ -9,8 +9,10 @@ interface TopicsStageProps {
 }
 
 const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
-  // Use real topics from API call, fallback to empty array if none
-  const apiTopics = quizData.topics || [];
+  // Use extracted topics from scanning if available, else fallback to current topics
+  const apiTopics = (quizData.extractedTopics && Array.isArray(quizData.extractedTopics) && quizData.extractedTopics.length > 0)
+    ? quizData.extractedTopics
+    : (quizData.topics || []);
   
   // Combine API topics with some fallback topics if API returns empty
   const baseTopics = apiTopics.length > 0 ? apiTopics : [
@@ -32,6 +34,14 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
       // Don't auto-select API topics - let user choose which ones they want
     }
   }, [apiTopics]);
+
+  // Preselect previously chosen topics when coming from a retake-same-PDF flow
+  useEffect(() => {
+    if (quizData.presetTopics && selectedTopics.length === 0) {
+      const previouslySelected: string[] = Array.isArray(quizData.topics) ? quizData.topics : [];
+      setSelectedTopics(previouslySelected);
+    }
+  }, [quizData.presetTopics, quizData.topics, selectedTopics.length]);
 
   const filteredTopics = useMemo(() => {
     const q = search.trim().toLowerCase();

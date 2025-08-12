@@ -34,7 +34,7 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
         });
         
         if (response.data && response.data.topics) {
-          setQuizData({ ...quizData, topics: response.data.topics });
+          setQuizData({ ...quizData, topics: response.data.topics, extractedTopics: response.data.topics });
           setCurrentStage('topics');
         } else {
           throw new Error('Invalid response format from server');
