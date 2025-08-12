@@ -1,4 +1,4 @@
-def prompt_func(text_extract, topic_list, difficulty, number_of_questions):
+def prompt_func(text_extract, topic, difficulty, number_of_questions):
     promptstr = f"""
 ###
 You are about to be given a text extract.
@@ -18,18 +18,15 @@ You are an expert multiple-choice question (MCQ) generator trained to create fac
 Your Task:
 Generate a set of {
         number_of_questions
-    } high quality multiple-choice questions based on the text extract and the requested topics. Output them in a well-structured JSON array.
+    } high quality multiple-choice questions based on the text extract and the requested topic. Output them in a well-structured JSON array.
 
-### Topic List
-{topic_list}
+### Topic : {topic}
 
 ###
 Guidelines for Good MCQs:
 - Questions should test understanding, recall, reasoning, or comparisons - not just trivial word matching.
 - Distractors should be plausible but clearly wrong, not trivially false or obviously off-topic.
 - Each option should have and clear meanings. There should be no ambiguity between the options.
-- Refer the topic list given to you. Then find questions in the given extract related to topics. One question can map to multiple topics if needed.
-- Choose ALL topics ONLY from the topic list that apply to the question, not just one. One question could have many topics applied to it.
 - The explanation should:
   - Clearly justify why the correct answer is correct.
   - Briefly explain why each other option is incorrect.
@@ -49,13 +46,11 @@ Constraints:
       "D": "..."
     }},
     "correct_answer": "B",
-    "topics": ["..."],
+    "topics": ["{topic}"],
     "explanation": "..."
   }}
 ]
 
-  - `"topics"` field must be a list of ALL the topics that apply to the questions. Choose topics only from the following:
-    {topic_list}
   - The `"explanation"` field will contain a brief explanation of why the correct option is the correct one and why the other options are wrong.
 - Do not hallucinate or use any prior information for generating the questions.
 - Double check the truthness of the correct answer and its explanation with the given extract before printing it out.
@@ -66,15 +61,39 @@ Constraints:
 - Repeating because this is very important, GIVE EXACTLY {
         number_of_questions
     } QUESTIONS in the array.
-- Respond with ONLY the formatted JSON object. No commentary, explanation or surrounding text.
+- Respond with ONLY the formatted JSON object following the exact format mentioned before. No commentary, explanation or surrounding text.
 
 ###
-An example will now be given to you. Notice how every question follows the format strictly. Notice how the explanation explains all the options. Notice how the distractors are not too obvious to be wrong.
-Even if the example only has an array of 2 questions, remember that you have to give an array of exactly
-{number_of_questions} questions
-Examples of formatted MCQ question arrays
+An example will now be given to you. These questions have nothing to do with the given text extract. You have to make questions based on the text extract. Notice how every question follows the format strictly. Notice how the explanation explains all the options. Notice how the distractors are not too obvious to be wrong.
+Even if the example only has an array of 2 questions, remember that you have to give an array of exactly {number_of_questions} questions
+Examples of formatted MCQ question array:
 
-{give_example(difficulty)}
+[
+  {{
+    "question": "Which of the following is true?",
+    "options": {{
+      "A": "2 + 0 = 5",
+      "B": "5 - 3 = 2",
+      "C": "6 + 4 = 7",
+      "D": "7 = 8",
+    }},
+    "correct_answer": "B",
+    "topics": ["Basic Mathematics"],
+    "explanation": "Option B is the correct answer as the left hand side is equal to the right hand side of the equality. Option A states 2 = 5, which is false. Option C states 10 = 7, which is also false. Option D plainly states a wrong equality.",
+  }},
+  {{
+    "question": "What is 9 + 6?",
+    "options": {{
+      "A": "12",
+      "B": "14",
+      "C": "15",
+      "D": "16"
+    }},
+    "correct_answer": "C",
+    "topics": ["Basic Mathematics"],
+    "explanation": "9 + 6 equals 15, so option C is correct. The other options are common mistakes if someone adds incorrectly or forgets carrying over.",
+  }}
+]
 
 """
     return promptstr
@@ -94,7 +113,7 @@ def easy():
       "D": "7 = 8",
     }},
     "correct_answer": "B",
-    "topics": ["Basic Mathematics", "Addition and Subtraction", "Mathematical equality"],
+    "topics": ["Basic Mathematics"],
     "explanation": "Option B is the correct answer as the left hand side is equal to the right hand side of the equality. Option A states 2 = 5, which is false. Option C states 10 = 7, which is also false. Option D plainly states a wrong equality.",
   }},
   {{
@@ -106,7 +125,7 @@ def easy():
       "D": "16"
     }},
     "correct_answer": "C",
-    "topics": ["Mathematics", "Addition", "Arithmetic"],
+    "topics": ["Basic Mathematics"],
     "explanation": "9 + 6 equals 15, so option C is correct. The other options are common mistakes if someone adds incorrectly or forgets carrying over.",
   }}
 ]
