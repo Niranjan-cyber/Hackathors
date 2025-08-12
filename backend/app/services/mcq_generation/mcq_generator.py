@@ -8,7 +8,7 @@ TIMEOUT = 200
 MAX_TRIES = 3
 MODEL_NAME = "llama3.1"
 OLLAMA_URL = "http://localhost:11434/api/generate"
-PATH_TO_TEXT = "app/models/mcq_generation/OCR_text.txt"
+PATH_TO_TEXT = "app/services/mcq_generation/OCR_text.txt"
 
 
 def log(text):

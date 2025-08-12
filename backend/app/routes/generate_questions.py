@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Form
 import json
 import sys
 import os
-from app.models.mcq_generation import mcq_generator
+from app.services.mcq_generation import mcq_generator
 
 
 # --- Router Initialization ---

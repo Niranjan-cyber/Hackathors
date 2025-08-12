@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import os
 import shutil
 
-from app.models.topic_extracting.topic_extractor import (
+from app.services.topic_extracting.topic_extractor import (
     extract_text_from_pdf,
     extract_topics_from_pdf_text,
 )
@@ -22,7 +22,7 @@ async def extract_topics(file: UploadFile = File(...)):
         extracted_text = extract_text_from_pdf(temp_file_path)
         
         # After extracting text from the PDF (assume variable is 'extracted_text')
-        with open("app/models/mcq_generation/OCR_text.txt", "w", encoding="utf-8") as f:
+        with open("app/services/mcq_generation/OCR_text.txt", "w", encoding="utf-8") as f:
             f.write(extracted_text)
 
         # Step 2: Extract topics

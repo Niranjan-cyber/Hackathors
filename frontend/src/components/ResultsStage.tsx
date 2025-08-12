@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import ResultsPdf from './ResultsPdf';
 import { Trophy, Download, Mail, RotateCcw, Target, Clock, Brain, Star, ChevronDown, ChevronUp, FileText, X, Repeat } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -81,12 +81,93 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
 
   const handleEmailResults = () => setShowEmailModal(true);
 
+  const generatePdfBlob = async () => {
+    try {
+      const pdfDoc = <ResultsPdf quizData={quizData} />;
+      const blob = await pdf(pdfDoc).toBlob();
+      return blob;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw new Error('Failed to generate PDF');
+    }
+  };
+
   const handleSendEmail = async () => {
-    if (!emailInput.trim()) { toast.error('Please enter a valid email address'); return; }
+    if (!emailInput.trim()) { 
+      toast.error('Please enter a valid email address'); 
+      return; 
+    }
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailInput)) { toast.error('Please enter a valid email address'); return; }
+    if (!emailRegex.test(emailInput)) { 
+      toast.error('Please enter a valid email address'); 
+      return; 
+    }
+
     setIsEmailSending(true);
-    setTimeout(() => { setIsEmailSending(false); setShowEmailModal(false); setEmailInput(''); toast.success(`Results sent to ${emailInput}!`, { duration: 1500 }); }, 2000);
+    
+    try {
+      // Show generating PDF toast
+      const pdfToast = toast.loading('Generating PDF...');
+      
+      // Generate PDF blob
+      const pdfBlob = await generatePdfBlob();
+      
+      toast.dismiss(pdfToast);
+      const emailToast = toast.loading('Sending email...');
+      
+      // Create FormData for the email request
+      const formData = new FormData();
+      formData.append('to', emailInput);
+      formData.append('subject', `Neocortex Quiz Results - ${percentage}% Score`);
+      formData.append('body', `Hi there!
+
+Your Neocortex quiz results are attached to this email.
+
+Quiz Summary:
+- Score: ${score}/${totalQuestions} (${percentage}%)
+- Grade: ${grade.grade}
+- Time Spent: ${formatTime(timeSpent)}
+- Topics Covered: ${topicStats.map(t => t.topic).join(', ')}
+
+Keep up the great work with your learning journey!
+
+Best regards,
+Neocortex Team`);
+      
+      // Create a File object from the blob
+      const pdfFile = new File([pdfBlob], 'quiz-results.pdf', { type: 'application/pdf' });
+      formData.append('file', pdfFile);
+
+      // Send email request to backend
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/send-email`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      toast.dismiss(emailToast);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send email');
+      }
+
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        toast.success(`Results sent to ${emailInput}!`, { duration: 3000 });
+        setShowEmailModal(false);
+        setEmailInput('');
+      } else {
+        throw new Error(result.message || 'Failed to send email');
+      }
+      
+    } catch (error) {
+      console.error('Email error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to send email');
+    } finally {
+      setIsEmailSending(false);
+    }
   };
 
   const handleDownloadPDF = () => { toast.success('PDF downloaded successfully!', { duration: 1500 }); };

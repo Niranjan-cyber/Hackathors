@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form, File, UploadFile
 from fastapi.responses import JSONResponse
 from app.schemas.email import EmailResponse, EmailErrorResponse
-from backend.app.services.send_email.email_service import email_service
+from app.services.send_email.email_service import email_service
 
 router = APIRouter()
 
