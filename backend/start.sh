@@ -28,6 +28,6 @@ echo "🤖 Started Ollama model: llama3.1 (PID $OLLAMA_LLAMA_PID)"
 # Trap to kill ollama models on exit
 trap 'echo "🛑 Stopping Ollama models..."; kill $OLLAMA_LLAMA_PID; if type deactivate; then echo "🧹 Deactivating virtual environment..."; deactivate; fi' EXIT
 
-# Start FastAPI backend
-echo "🚀 Starting FastAPI backend..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 300 --timeout-graceful-shutdown 300
+# Start FastAPI backend (with auto-reload)
+echo "🚀 Starting FastAPI backend (reload enabled)..."
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --timeout-keep-alive 300 --timeout-graceful-shutdown 300
