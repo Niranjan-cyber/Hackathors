@@ -15,15 +15,10 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
   // Auto-advance after a short, pleasant animation
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Ensure topics exist so the next stage has content
-      if (!Array.isArray(quizData.topics) || quizData.topics.length === 0) {
-        const mockTopics = ['Data Structures', 'Algorithms', 'Database Design', 'Software Engineering', 'Computer Networks'];
-        setQuizData({ ...quizData, topics: mockTopics });
-      }
       setCurrentStage('topics');
-    }, 10000); // 2000ms per request
+    }, 10000);
     return () => clearTimeout(timer);
-  }, [quizData, setQuizData, setCurrentStage]);
+  }, [setCurrentStage]);
 
   // Radar canvas animation (static, not tied to model)
   useEffect(() => {

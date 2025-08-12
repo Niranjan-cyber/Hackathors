@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import ResultsPdf from './ResultsPdf';
-import { Trophy, Download, Mail, RotateCcw, Target, Clock, Brain, Star, ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
+import { Trophy, Download, Mail, RotateCcw, Target, Clock, Brain, Star, ChevronDown, ChevronUp, FileText, X, Repeat } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface ResultsStageProps {
@@ -11,7 +11,7 @@ interface ResultsStageProps {
   setCurrentStage: (stage: any) => void;
 }
 
-const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }) => {
+const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const [showDetailedReport, setShowDetailedReport] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -32,7 +32,6 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
 
   const grade = getGrade(percentage);
 
-  // Compute topic-wise performance from actual answers
   const topicStats = React.useMemo(() => {
     const stats: Record<string, { correct: number; total: number }> = {};
     const questions: any[] = Array.isArray(quizData.questions) ? quizData.questions : [];
@@ -49,7 +48,6 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
       total,
       percent: total > 0 ? Math.round((correct / total) * 100) : 0,
     }));
-    // Sort topics by descending percentage, then by name
     entries.sort((a, b) => (b.percent - a.percent) || a.topic.localeCompare(b.topic));
     return entries;
   }, [quizData.questions, quizData.answers]);
@@ -60,40 +58,38 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
     return `${mins}m ${secs}s`;
   };
 
-  const handleRestart = () => {
+  const handleDifferentPdf = () => {
     setCurrentStage('upload');
   };
 
-  const handleEmailResults = () => {
-    setShowEmailModal(true);
+  const handleRetakeSameTopics = () => {
+    const uniqueTopics = Array.from(new Set((quizData.questions || []).map((q: any) => q.topic).filter(Boolean)));
+    const topicsToUse = uniqueTopics.length === 0 && Array.isArray(quizData.topics) ? quizData.topics : uniqueTopics;
+    setQuizData({ ...quizData, topics: topicsToUse, presetTopics: true });
+    setCurrentStage('topics');
   };
+
+  const handleRetakeFailedTopics = () => {
+    const failed = topicStats.filter(t => t.percent < 50).map(t => t.topic);
+    if (failed.length === 0) {
+      toast('No failed topics (<50%)', { icon: '✅', duration: 1500 });
+      return;
+    }
+    setQuizData({ ...quizData, topics: failed });
+    setCurrentStage('difficulty');
+  };
+
+  const handleEmailResults = () => setShowEmailModal(true);
 
   const handleSendEmail = async () => {
-    if (!emailInput.trim()) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
+    if (!emailInput.trim()) { toast.error('Please enter a valid email address'); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailInput)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
+    if (!emailRegex.test(emailInput)) { toast.error('Please enter a valid email address'); return; }
     setIsEmailSending(true);
-    
-    // Simulate email sending
-    setTimeout(() => {
-      setIsEmailSending(false);
-      setShowEmailModal(false);
-      setEmailInput('');
-      toast.success(`Results sent to ${emailInput}!`, { duration: 1500 });
-    }, 2000);
+    setTimeout(() => { setIsEmailSending(false); setShowEmailModal(false); setEmailInput(''); toast.success(`Results sent to ${emailInput}!`, { duration: 1500 }); }, 2000);
   };
 
-  const handleDownloadPDF = () => {
-    toast.success('PDF downloaded successfully!', { duration: 1500 });
-  };
+  const handleDownloadPDF = () => { toast.success('PDF downloaded successfully!', { duration: 1500 }); };
 
   const optionLabels = ['A', 'B', 'C', 'D'];
   const generateExplanation = (question: any, correctIndex: number) => {
@@ -125,16 +121,31 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
         <div className="lg:col-span-2">
           <div className="glass-panel-strong p-8 md:p-12 rounded-3xl text-center mb-8 fade-in-up">
             <div className="relative mb-8">
-              {/* Circular Progress */}
-              <svg className="w-64 h-64 mx-auto transform -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  stroke="rgba(59, 130, 246, 0.2)"
-                  strokeWidth="8"
-                  fill="none"
-                />
+              {/* Ambient glow */}
+              <div className="absolute -inset-6 blur-3xl bg-gradient-to-r from-blue-500/10 via-cyan-400/10 to-indigo-500/10 rounded-full" />
+
+              {/* Circular Progress (premium) */}
+              <svg className="w-80 h-80 mx-auto transform -rotate-90 relative" viewBox="0 0 100 100">
+                {/* Subtle outer ring */}
+                <circle cx="50" cy="50" r="47" stroke="rgba(148,163,184,0.25)" strokeWidth="1" fill="none" />
+
+                {/* Background track */}
+                <circle cx="50" cy="50" r="45" stroke="rgba(59,130,246,0.18)" strokeWidth="8" fill="none" />
+
+                {/* Inner dashed ring for texture */}
+                <circle cx="50" cy="50" r="38" stroke="rgba(148,163,184,0.25)" strokeWidth="1" fill="none" strokeDasharray="1 3" />
+
+                {/* Tick marks */}
+                {Array.from({ length: 40 }).map((_, i) => {
+                  const a = (i / 40) * Math.PI * 2;
+                  const x1 = 50 + Math.cos(a) * 41.5;
+                  const y1 = 50 + Math.sin(a) * 41.5;
+                  const x2 = 50 + Math.cos(a) * (i % 5 === 0 ? 45 : 43);
+                  const y2 = 50 + Math.sin(a) * (i % 5 === 0 ? 45 : 43);
+                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={i % 5 === 0 ? 'rgba(148,163,184,0.45)' : 'rgba(148,163,184,0.25)'} strokeWidth={i % 5 === 0 ? 1.2 : 0.6} />;
+                })}
+
+                {/* Progress arc */}
                 <circle
                   cx="50"
                   cy="50"
@@ -145,8 +156,18 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
                   strokeDasharray={`${2 * Math.PI * 45}`}
                   strokeDashoffset={`${2 * Math.PI * 45 * (1 - percentage / 100)}`}
                   strokeLinecap="round"
-                  className="transition-all duration-1000 ease-out"
+                  className="transition-all duration-1000 ease-out drop-shadow-[0_0_10px_rgba(59,130,246,0.45)]"
                 />
+
+                {/* Moving head dot on the arc */}
+                <circle
+                  cx={50 + 45 * Math.cos((percentage / 100) * 2 * Math.PI)}
+                  cy={50 + 45 * Math.sin((percentage / 100) * 2 * Math.PI)}
+                  r="2.5"
+                  fill="#06b6d4"
+                  className="drop-shadow-[0_0_6px_rgba(6,182,212,0.8)]"
+                />
+
                 <defs>
                   <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#3b82f6" />
@@ -154,10 +175,16 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
                   </linearGradient>
                 </defs>
               </svg>
+
+              {/* Center summary */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-white mb-1">{percentage}%</div>
-                  <div className="text-lg text-slate-300">{score}/{totalQuestions}</div>
+                  <div className="text-6xl font-extrabold text-white mb-1 tracking-tight">{percentage}%</div>
+                  <div className="text-sm text-slate-400 mb-3">Accuracy</div>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-300 border border-blue-400/20">{score} Correct</span>
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-400/20">{totalQuestions} Questions</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -176,7 +203,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
           <div className="glass-panel p-4 rounded-xl">
             <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
               <Target className="w-5 h-5 mr-2 text-cyan-400" />
-              Performance
+            Performance
             </h4>
             <div className="space-y-3">
               {topicStats.map((topic) => (
@@ -184,7 +211,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
                   <span className="text-slate-300 text-sm">{topic.topic}</span>
                   <div className="text-right">
                     <div className="text-white font-semibold">{topic.correct}/{topic.total}</div>
-                    <div className="text-cyan-400 text-sm">{topic.percent}%</div>
+                    <div className={`text-sm ${topic.percent < 50 ? 'text-rose-400' : 'text-cyan-400'}`}>{topic.percent}%</div>
                   </div>
                 </div>
               ))}
@@ -220,24 +247,28 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
         </div>
       </div>
 
+      {/* Quick Retake Actions */}
+      <div className="flex flex-wrap justify-center gap-4 mb-10 fade-in-up">
+        <button onClick={handleRetakeSameTopics} className="premium-button px-6 py-3 flex items-center space-x-2" title="Use the same topics from this test">
+          <Repeat className="w-5 h-5" />
+          <span>Take test on same topics</span>
+        </button>
+        <button onClick={handleRetakeFailedTopics} className="glass-panel px-6 py-3 rounded-2xl flex items-center space-x-2 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105" title="Only include topics below 50%">
+          <Repeat className="w-5 h-5" />
+          <span>Take test on failed topics</span>
+        </button>
+      </div>
+
       {/* Collapsible Detailed Report */}
       {Array.isArray(quizData.questions) && quizData.questions.length > 0 && (
         <div className="glass-panel-strong rounded-3xl mb-12 fade-in-up stagger-3 overflow-hidden">
-          <button
-            onClick={() => setShowDetailedReport(!showDetailedReport)}
-            className="w-full p-6 flex items-center justify-between text-left hover:bg-slate-800/30 transition-colors duration-200"
-          >
+          <button onClick={() => setShowDetailedReport(!showDetailedReport)} className="w-full p-6 flex items-center justify-between text-left hover:bg-slate-800/30 transition-colors duration-200">
             <div className="flex items-center">
               <FileText className="w-6 h-6 mr-3 text-cyan-400" />
               <h3 className="text-2xl font-bold text-white">Detailed Report</h3>
             </div>
-            {showDetailedReport ? (
-              <ChevronUp className="w-6 h-6 text-slate-400" />
-            ) : (
-              <ChevronDown className="w-6 h-6 text-slate-400" />
-            )}
+            {showDetailedReport ? <ChevronUp className="w-6 h-6 text-slate-400" /> : <ChevronDown className="w-6 h-6 text-slate-400" />}
           </button>
-          
           {showDetailedReport && (
             <div className="px-6 pb-6 space-y-6 border-t border-slate-700">
               {quizData.questions.map((q: any, idx: number) => {
@@ -248,24 +279,17 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
                   <div key={q.id} className="glass-panel p-6 rounded-2xl">
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-sm text-slate-400">Question {idx + 1}</div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isCorrect ? 'bg-green-500/15 text-green-400' : 'bg-rose-500/15 text-rose-400'}`}>
-                        {isCorrect ? 'Correct' : 'Incorrect'}
-                      </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isCorrect ? 'bg-green-500/15 text-green-400' : 'bg-rose-500/15 text-rose-400'}`}>{isCorrect ? 'Correct' : 'Incorrect'}</span>
                     </div>
                     <div className="text-white font-semibold mb-4">{q.question}</div>
-
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
-                      <div className={`p-4 rounded-xl ${userIdx === undefined ? 'bg-slate-800/40' : isCorrect ? 'bg-green-500/10' : 'bg-rose-500/10'}`}>
+                      <div className={`${userIdx === undefined ? 'bg-slate-800/40' : isCorrect ? 'bg-green-500/10' : 'bg-rose-500/10'} p-4 rounded-xl`}>
                         <div className="text-xs text-slate-400 mb-1">Your Answer</div>
                         <div className="text-slate-200 text-sm">
-                          {userIdx === undefined ? (
-                            <span className="text-slate-400">Not answered</span>
-                          ) : (
-                            <>
-                              <span className="font-semibold text-slate-300 mr-2">{optionLabels[userIdx]}.</span>
-                              {q.options?.[userIdx]}
-                            </>
-                          )}
+                          {userIdx === undefined ? <span className="text-slate-400">Not answered</span> : (<>
+                            <span className="font-semibold text-slate-300 mr-2">{optionLabels[userIdx]}.</span>
+                            {q.options?.[userIdx]}
+                          </>)}
                         </div>
                       </div>
                       <div className="p-4 rounded-xl bg-blue-500/10">
@@ -276,12 +300,9 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
                         </div>
                       </div>
                     </div>
-
                     <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700">
                       <div className="text-xs text-slate-400 mb-1">Explanation</div>
-                      <p className="text-slate-300 text-sm leading-relaxed">
-                        {generateExplanation(q, correctIdx)}
-                      </p>
+                      <p className="text-slate-300 text-sm leading-relaxed">{`The correct choice emphasizes key principles of ${q.topic || 'the topic'}.`}</p>
                     </div>
                   </div>
                 );
@@ -291,35 +312,28 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap justify-center gap-6 mb-12 fade-in-up stagger-3">
+      {/* Action Buttons (top row) */}
+      <div className="flex flex-wrap justify-center gap-6 mb-4 fade-in-up stagger-3">
         <PDFDownloadLink document={<ResultsPdf quizData={quizData} />} fileName="quiz-report.pdf">
           {({ loading, error }) => (
-            <button 
-              className="glass-panel px-8 py-4 rounded-2xl flex items-center space-x-3 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
-              disabled={loading}
-              onClick={handleDownloadPDF}
-            >
+            <button className="glass-panel px-8 py-4 rounded-2xl flex items-center space-x-3 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105" disabled={loading} onClick={handleDownloadPDF}>
               <Download className="w-5 h-5" />
-              <span>{loading ? 'Preparing...' : error ? 'Error' : 'Download PDF'}</span>
+              <span>{loading ? 'Preparing...' : error ? 'Error' : 'Download Report'}</span>
             </button>
           )}
         </PDFDownloadLink>
         
-        <button
-          onClick={handleEmailResults}
-          className="glass-panel px-8 py-4 rounded-2xl flex items-center space-x-3 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
-        >
+        <button onClick={handleEmailResults} className="glass-panel px-8 py-4 rounded-2xl flex items-center space-x-3 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105">
           <Mail className="w-5 h-5" />
           <span>Email Results</span>
         </button>
-        
-        <button
-          onClick={handleRestart}
-          className="premium-button px-8 py-4 flex items-center space-x-3"
-        >
+      </div>
+
+      {/* Bottom single action */}
+      <div className="flex justify-center mb-12 fade-in-up">
+        <button onClick={handleDifferentPdf} className="premium-button px-8 py-4 flex items-center space-x-3">
           <RotateCcw className="w-5 h-5" />
-          <span>Take Another Quiz</span>
+          <span>Take quiz on different PDF</span>
         </button>
       </div>
 
@@ -329,53 +343,17 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
           <div className="glass-panel-strong p-8 rounded-3xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold text-white">Send Results</h3>
-              <button
-                onClick={() => {
-                  setShowEmailModal(false);
-                  setEmailInput('');
-                }}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
+              <button onClick={() => { setShowEmailModal(false); setEmailInput(''); }} className="text-slate-400 hover:text-white transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
             <div className="mb-6">
-              <label htmlFor="email" className="block text-slate-300 mb-2 font-medium">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="Enter email address"
-                className="w-full bg-slate-800/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:border-blue-400 focus:outline-none transition-all duration-300"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSendEmail();
-                  }
-                }}
-              />
+              <label htmlFor="email" className="block text-slate-300 mb-2 font-medium">Email Address</label>
+              <input type="email" id="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="Enter email address" className="w-full bg-slate-800/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:border-blue-400 focus:outline-none transition-all duration-300" onKeyDown={(e) => { if (e.key === 'Enter') { handleSendEmail(); } }} />
             </div>
-            
             <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setShowEmailModal(false);
-                  setEmailInput('');
-                }}
-                className="flex-1 glass-panel px-6 py-3 rounded-xl text-slate-300 hover:text-white transition-all duration-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendEmail}
-                disabled={isEmailSending || !emailInput.trim()}
-                className="flex-1 premium-button px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isEmailSending ? 'Sending...' : 'Send'}
-              </button>
+              <button onClick={() => { setShowEmailModal(false); setEmailInput(''); }} className="flex-1 glass-panel px-6 py-3 rounded-xl text-slate-300 hover:text-white transition-all duration-300">Cancel</button>
+              <button onClick={handleSendEmail} disabled={isEmailSending || !emailInput.trim()} className="flex-1 premium-button px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">{isEmailSending ? 'Sending...' : 'Send'}</button>
             </div>
           </div>
         </div>
@@ -383,20 +361,9 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setCurrentStage }
 
       {/* Motivational Message */}
       <div className="glass-panel-strong p-8 rounded-3xl text-center fade-in-up stagger-4">
-        <div className="text-4xl mb-4">
-          {percentage >= 80 ? '🎉' : percentage >= 60 ? '💪' : '📚'}
-        </div>
-        <h3 className="text-2xl font-bold text-white mb-4">
-          {percentage >= 80 ? 'Excellent Work!' : percentage >= 60 ? 'Keep Going!' : 'Keep Learning!'}
-        </h3>
-        <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          {percentage >= 80 
-            ? "You've demonstrated strong mastery of the material. Consider challenging yourself with harder questions or exploring advanced topics."
-            : percentage >= 60
-            ? "You're making good progress! Review the areas where you struggled and try again to reinforce your learning."
-            : "Every quiz is a learning opportunity. Focus on understanding the concepts and don't hesitate to study the material before retaking."
-          }
-        </p>
+        <div className="text-4xl mb-4">{percentage >= 80 ? '🎉' : percentage >= 60 ? '💪' : '📚'}</div>
+        <h3 className="text-2xl font-bold text-white mb-4">{percentage >= 80 ? 'Excellent Work!' : percentage >= 60 ? 'Keep Going!' : 'Keep Learning!'}</h3>
+        <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">{percentage >= 80 ? "You've demonstrated strong mastery of the material. Consider challenging yourself with harder questions or exploring advanced topics." : percentage >= 60 ? "You're making good progress! Review the areas where you struggled and try again to reinforce your learning." : "Every quiz is a learning opportunity. Focus on understanding the concepts and don't hesitate to study the material before retaking."}</p>
       </div>
     </div>
   );

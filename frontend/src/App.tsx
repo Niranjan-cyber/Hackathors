@@ -12,9 +12,10 @@ import TestStage from './components/TestStage';
 import ResultsStage from './components/ResultsStage';
 import Background3D from './components/Background3D';
 import CursorOrb from './components/CursorOrb';
+import LanguageStage from './components/LanguageStage';
 import './index.css';
 
-type Stage = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer' | 'starting' | 'test' | 'results';
+type Stage = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer' | 'language' | 'starting' | 'test' | 'results';
 
 interface QuizData {
   file?: File;
@@ -76,6 +77,7 @@ function App() {
     difficulty: DifficultyStage,
     count: CountStage,
     timer: TimerStage,
+    language: LanguageStage,
     starting: StartingStage,
     test: TestStage,
     results: ResultsStage
@@ -83,7 +85,7 @@ function App() {
 
   const CurrentStageComponent = stageComponents[currentStage];
 
-  const progressStages = ['upload', 'scanning', 'topics', 'difficulty', 'count', 'timer', 'starting', 'test', 'results'];
+  const progressStages = ['upload', 'scanning', 'topics', 'difficulty', 'count', 'timer', 'language', 'starting', 'test', 'results'];
   const currentProgress = progressStages.indexOf(currentStage);
 
   return (

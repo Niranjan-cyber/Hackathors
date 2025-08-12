@@ -22,7 +22,7 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
 
   const handleNext = () => {
     setQuizData({ ...quizData, timeLimit: mode === 'unlimited' ? 0 : timeLimit });
-    setCurrentStage('starting');
+    setCurrentStage('language');
   };
 
   return (
