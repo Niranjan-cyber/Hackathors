@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Brain, Cpu, FileText, CheckCircle } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Brain } from 'lucide-react';
 
 interface ScanningStageProps {
   quizData: any;
@@ -9,175 +9,146 @@ interface ScanningStageProps {
 }
 
 const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
-  const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState(0);
-  
-  const scanningSteps = [
-    { id: 'parsing', label: 'Parsing Document', icon: FileText },
-    { id: 'analyzing', label: 'AI Content Analysis', icon: Brain },
-    { id: 'extracting', label: 'Extracting Key Concepts', icon: Cpu },
-    { id: 'generating', label: 'Generating Question Bank', icon: CheckCircle },
-  ];
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-advance after a short, pleasant animation
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + 2;
-        
-        // Update current step based on progress
-        if (newProgress >= 25 && currentStep < 1) setCurrentStep(1);
-        if (newProgress >= 50 && currentStep < 2) setCurrentStep(2);
-        if (newProgress >= 75 && currentStep < 3) setCurrentStep(3);
-        
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          // Mock extracted topics
-          const mockTopics = ['Data Structures', 'Algorithms', 'Database Design', 'Software Engineering', 'Computer Networks'];
-          setQuizData({ ...quizData, topics: mockTopics });
-          setTimeout(() => setCurrentStage('topics'), 1500);
-        }
-        
-        return newProgress;
-      });
-    }, 100);
+    const timer = setTimeout(() => {
+      // Ensure topics exist so the next stage has content
+      if (!Array.isArray(quizData.topics) || quizData.topics.length === 0) {
+        const mockTopics = ['Data Structures', 'Algorithms', 'Database Design', 'Software Engineering', 'Computer Networks'];
+        setQuizData({ ...quizData, topics: mockTopics });
+      }
+      setCurrentStage('topics');
+    }, 10000); // 2000ms per request
+    return () => clearTimeout(timer);
+  }, [quizData, setQuizData, setCurrentStage]);
 
-    return () => clearInterval(interval);
-  }, [currentStep, quizData, setQuizData, setCurrentStage]);
+  // Radar canvas animation (static, not tied to model)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let raf = 0;
+    let time = 0;
+
+    const resize = () => {
+      const side = Math.min(container.clientWidth, 520);
+      canvas.width = side;
+      canvas.height = side;
+    };
+    resize();
+
+    const sparkles: Array<{ angle: number; radius: number; speed: number }> = [];
+    for (let i = 0; i < 48; i++) {
+      sparkles.push({ angle: Math.random() * Math.PI * 2, radius: 40 + Math.random() * 200, speed: 0.002 + Math.random() * 0.004 });
+    }
+
+    const draw = () => {
+      const { width, height } = canvas;
+      const cx = width / 2;
+      const cy = height / 2;
+      time += 1 / 60;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Background subtle glow
+      const radial = ctx.createRadialGradient(cx, cy, 0, cx, cy, width / 2);
+      radial.addColorStop(0, 'rgba(15, 23, 42, 0.0)');
+      radial.addColorStop(1, 'rgba(15, 23, 42, 0.2)');
+      ctx.fillStyle = radial;
+      ctx.fillRect(0, 0, width, height);
+
+      // Pulsing rings
+      for (let i = 0; i < 4; i++) {
+        const base = (time * 120 + i * 110) % (width);
+        const r = 40 + base * 0.6;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        const alpha = 0.12 * (1 - (r / (width * 0.7)));
+        ctx.strokeStyle = `rgba(34, 211, 238, ${Math.max(0, alpha)})`; // cyan
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Rotating sweep
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(time * 0.9);
+      const sweepAngle = Math.PI / 6;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, width * 0.42, -sweepAngle / 2, sweepAngle / 2);
+      ctx.closePath();
+      const sweepGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, width * 0.42);
+      sweepGrad.addColorStop(0, 'rgba(34, 211, 238, 0.35)');
+      sweepGrad.addColorStop(1, 'rgba(34, 211, 238, 0.0)');
+      ctx.fillStyle = sweepGrad;
+      ctx.fill();
+      ctx.restore();
+
+      // Sparkles orbiting
+      for (let i = 0; i < sparkles.length; i++) {
+        const s = sparkles[i];
+        s.angle += s.speed;
+        const x = cx + Math.cos(s.angle) * s.radius;
+        const y = cy + Math.sin(s.angle) * s.radius;
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(124, 58, 237, 0.45)'; // purple
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Center node
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    raf = requestAnimationFrame(draw);
+    const onResize = () => {
+      resize();
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
 
   return (
-    <div className="max-w-4xl mx-auto text-center">
+    <div className="max-w-5xl mx-auto text-center" ref={containerRef}>
       {/* Header */}
-      <div className="mb-16 fade-in-up">
-        <div className="relative inline-block mb-8">
-          <div className="w-32 h-32 glass-panel rounded-full flex items-center justify-center floating-card">
-            <Brain className="w-16 h-16 text-cyan-400 rotate-slow" />
-            <div className="absolute inset-0 bg-gradient-conic from-cyan-400/30 via-purple-400/30 to-cyan-400/30 rounded-full animate-pulse"></div>
+      <div className="mb-10 fade-in-up overflow-visible">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-28 h-28 glass-panel rounded-full flex items-center justify-center floating-card">
+            <Brain className="w-14 h-14 text-cyan-400 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-conic from-cyan-400/25 via-purple-400/25 to-cyan-400/25 rounded-full animate-spin"></div>
           </div>
+          <h1 className="text-5xl md:text-6xl font-bold leading-[1.2] inline-block pb-2 bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+            AI Processing
+          </h1>
         </div>
-
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
-          AI Processing
-        </h1>
-        <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-          Our neural network is analyzing your content and extracting the most important concepts
+        <p className="mt-2 text-lg md:text-xl text-slate-300 max-w-2xl mx-auto pb-1">
+          Relax while we prepare your interactive quiz experience.
         </p>
       </div>
 
-      {/* Progress Circle */}
-      <div className="relative w-64 h-64 mx-auto mb-12 fade-in-up stagger-1">
-        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-          {/* Background Circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="rgba(71, 85, 105, 0.3)"
-            strokeWidth="4"
-          />
-          {/* Progress Circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="url(#progressGradient)"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={`${progress * 2.827} 282.7`}
-            className="transition-all duration-300 ease-out"
-          />
-          <defs>
-            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00d4ff" />
-              <stop offset="50%" stopColor="#ff0080" />
-              <stop offset="100%" stopColor="#00ffaa" />
-            </linearGradient>
-          </defs>
-        </svg>
-        
-        {/* Progress Text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-bold text-white mb-2">{Math.round(progress)}%</span>
-          <span className="text-sm text-slate-400">Processing</span>
-        </div>
+      {/* Radar animation */}
+      <div className="flex justify-center mb-16">
+        <canvas ref={canvasRef} className="rounded-full shadow-[0_0_60px_rgba(34,211,238,0.15)]" />
       </div>
 
-      {/* Processing Steps */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 fade-in-up stagger-2">
-        {scanningSteps.map((step, index) => {
-          const isActive = index === currentStep;
-          const isCompleted = index < currentStep;
-          const IconComponent = step.icon;
-          
-          return (
-            <div
-              key={step.id}
-              className={`
-                glass-panel p-6 rounded-2xl transition-all duration-500
-                ${isActive ? 'scale-105 neon-glow' : ''}
-                ${isCompleted ? 'bg-emerald-500/10' : ''}
-              `}
-            >
-              <div className={`
-                w-16 h-16 rounded-2xl flex items-center justify-center mb-4 mx-auto transition-all duration-500
-                ${isActive 
-                  ? 'bg-gradient-to-r from-cyan-400/30 to-purple-400/30 scale-110' 
-                  : isCompleted
-                  ? 'bg-emerald-500/20'
-                  : 'bg-slate-700/30'
-                }
-              `}>
-                <IconComponent className={`
-                  w-8 h-8 transition-colors duration-300
-                  ${isActive ? 'text-cyan-300' : isCompleted ? 'text-emerald-400' : 'text-slate-500'}
-                `} />
-              </div>
-              
-              <h3 className={`
-                text-lg font-semibold mb-2 transition-colors duration-300
-                ${isActive ? 'text-white' : isCompleted ? 'text-emerald-400' : 'text-slate-400'}
-              `}>
-                {step.label}
-              </h3>
-              
-              <div className={`
-                w-full h-1 rounded-full transition-all duration-500
-                ${isActive 
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-400' 
-                  : isCompleted 
-                  ? 'bg-emerald-400'
-                  : 'bg-slate-600'
-                }
-              `} />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* AI Insights Preview */}
-      <div className="glass-panel-strong p-8 rounded-3xl max-w-2xl mx-auto fade-in-up stagger-3">
-        <h3 className="text-2xl font-bold text-white mb-4">AI Insights</h3>
-        <div className="space-y-3 text-left">
-          {progress > 30 && (
-            <div className="flex items-center space-x-3 text-slate-300 fade-in-up">
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-              <span>Identified {Math.floor(progress / 20)} key topics</span>
-            </div>
-          )}
-          {progress > 60 && (
-            <div className="flex items-center space-x-3 text-slate-300 fade-in-up stagger-1">
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-              <span>Generated {Math.floor(progress / 2)} potential questions</span>
-            </div>
-          )}
-          {progress > 90 && (
-            <div className="flex items-center space-x-3 text-slate-300 fade-in-up stagger-2">
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-              <span>Optimized for multiple difficulty levels</span>
-            </div>
-          )}
-        </div>
+      {/* Fun tag line (static) */}
+      <div className="text-slate-400 text-sm">
+        Tip: Hover around while the scanner sweeps — it looks cooler than it needs to.
       </div>
     </div>
   );

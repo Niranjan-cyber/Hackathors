@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Brain, Target, Clock, Hash, Lightbulb, Eye, CheckCircle, Zap } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Brain } from 'lucide-react';
 
 interface StartingStageProps {
   quizData: any;
@@ -8,222 +8,148 @@ interface StartingStageProps {
   setCurrentStage: (stage: any) => void;
 }
 
-const StartingStage: React.FC<StartingStageProps> = ({ quizData, setCurrentStage }) => {
-  const [countdown, setCountdown] = useState(3);
-  const [isReady, setIsReady] = useState(false);
-  const [showSummary, setShowSummary] = useState(true);
-  const [activeTip, setActiveTip] = useState(0);
+const StartingStage: React.FC<StartingStageProps> = ({ setCurrentStage }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const handleStart = () => {
-    setShowSummary(false);
-    setCountdown(3);
-    
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setCurrentStage('test');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Auto-rotate tips
+  // Auto-advance to test after 10s (temporary until backend signals readiness)
   useEffect(() => {
-    if (!showSummary) return;
-    
-    const tipInterval = setInterval(() => {
-      setActiveTip(prev => (prev + 1) % 4);
-    }, 3000);
+    const timer = setTimeout(() => {
+      setCurrentStage('test');
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [setCurrentStage]);
 
-    return () => clearInterval(tipInterval);
-  }, [showSummary]);
+  // Full-screen aurora ribbons animation
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  const difficultyColors: Record<string, string> = {
-    easy: 'from-emerald-400 to-green-500',
-    medium: 'from-amber-400 to-orange-500',
-    hard: 'from-red-400 to-rose-500'
-  };
+    let raf = 0;
+    let time = 0;
+    const mouse = { x: 0.5, y: 0.5 };
 
-  const tips = [
-    {
-      icon: Eye,
-      title: "Read Carefully",
-      description: "Take time to read each question thoroughly before answering",
-      color: "from-blue-400 to-cyan-400"
-    },
-    {
-      icon: CheckCircle,
-      title: "Trust Your Instincts",
-      description: "Your first impression is often correct, but review if unsure",
-      color: "from-green-400 to-emerald-400"
-    },
-    {
-      icon: Zap,
-      title: "Stay Focused",
-      description: "Eliminate distractions and maintain concentration throughout",
-      color: "from-purple-400 to-pink-400"
-    },
-    {
-      icon: Lightbulb,
-      title: "Think Strategically",
-      description: "Use process of elimination when you're uncertain",
-      color: "from-amber-400 to-orange-400"
-    }
-  ];
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+
+    const onMove = (e: MouseEvent) => {
+      mouse.x = e.clientX / window.innerWidth;
+      mouse.y = e.clientY / window.innerHeight;
+    };
+    window.addEventListener('mousemove', onMove);
+
+    const colors = [
+      'rgba(34, 211, 238, 0.20)',
+      'rgba(124, 58, 237, 0.20)',
+      'rgba(244, 63, 94, 0.18)',
+      'rgba(59, 130, 246, 0.16)',
+    ];
+
+    const drawRibbon = (
+      phase: number,
+      amplitude: number,
+      freq: number,
+      color: string,
+      verticalOffset: number
+    ) => {
+      const { width, height } = canvas;
+      const h = height;
+      const w = width;
+      const baseY = h * verticalOffset;
+
+      ctx.beginPath();
+      ctx.moveTo(0, baseY);
+      const step = Math.max(12, Math.floor(w / 140));
+      for (let x = 0; x <= w; x += step) {
+        const t = (x / w) * Math.PI * 2 * freq + time * 0.8 + phase + mouse.x * 1.2;
+        const y = baseY + Math.sin(t) * amplitude * (0.7 + mouse.y * 0.6);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+
+      // Fill with soft color and add a subtle highlight stroke
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = color.replace('0.2', '0.35').replace('0.18', '0.3').replace('0.16', '0.26');
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    };
+
+    const draw = () => {
+      const { width, height } = canvas;
+      time += 0.016;
+
+      // Clear with transparent to preserve page gradient and star bg
+      ctx.clearRect(0, 0, width, height);
+
+      // Soft vignette
+      const vignette = ctx.createRadialGradient(
+        width * 0.5,
+        height * 0.5,
+        0,
+        width * 0.5,
+        height * 0.5,
+        Math.max(width, height) * 0.6
+      );
+      vignette.addColorStop(0, 'rgba(15,23,42,0.0)');
+      vignette.addColorStop(1, 'rgba(15,23,42,0.18)');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.globalCompositeOperation = 'screen';
+
+      // Multiple layered ribbons
+      drawRibbon(0.0, height * 0.12, 1.0, colors[0], 0.35);
+      drawRibbon(1.2, height * 0.10, 1.4, colors[1], 0.50);
+      drawRibbon(2.1, height * 0.09, 1.8, colors[2], 0.62);
+      drawRibbon(3.4, height * 0.11, 1.2, colors[3], 0.78);
+
+      ctx.globalCompositeOperation = 'source-over';
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    const onResize = () => resize();
+    window.addEventListener('resize', onResize);
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {showSummary ? (
-        <>
-          {/* Header */}
-          <div className="text-center mb-16 fade-in-up">
-            <div className="w-24 h-24 mx-auto glass-panel rounded-3xl flex items-center justify-center mb-6 floating-card">
-              <Play className="w-12 h-12 text-green-400" />
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-3xl animate-pulse"></div>
-            </div>
+    <div className="relative min-h-screen">
+      {/* Full-screen aurora backdrop */}
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 pointer-events-none"
+        style={{ zIndex: 1 }}
+      />
 
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-green-300 via-emerald-300 to-teal-300 bg-clip-text text-transparent">
-              Ready to Start?
-            </h1>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Review your quiz settings before we begin. Take a deep breath and trust your preparation!
-            </p>
+      {/* Overlay content */}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 text-center">
+        <div>
+          <div className="relative w-24 h-24 mx-auto mb-5 glass-panel rounded-full flex items-center justify-center floating-card">
+            <Brain className="w-12 h-12 text-cyan-400 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-conic from-cyan-400/25 via-purple-400/25 to-cyan-400/25 rounded-full animate-spin"></div>
           </div>
-
-          {/* Quiz Summary */}
-          <div className="glass-panel-strong p-8 rounded-3xl mb-12 fade-in-up stagger-1">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">Quiz Summary</h2>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {/* Topics */}
-              <div className="glass-panel p-6 rounded-2xl text-center">
-                <Brain className="w-8 h-8 mx-auto mb-3 text-purple-400" />
-                <div className="text-2xl font-bold text-white mb-2">{quizData.topics.length}</div>
-                <div className="text-sm text-slate-400">Topics</div>
-              </div>
-
-              {/* Difficulty */}
-              <div className="glass-panel p-6 rounded-2xl text-center">
-                <Target className="w-8 h-8 mx-auto mb-3 text-amber-400" />
-                <div className={`text-2xl font-bold mb-2 bg-gradient-to-r ${difficultyColors[quizData.difficulty]} bg-clip-text text-transparent capitalize`}>
-                  {quizData.difficulty}
-                </div>
-                <div className="text-sm text-slate-400">Difficulty</div>
-              </div>
-
-              {/* Question Count */}
-              <div className="glass-panel p-6 rounded-2xl text-center">
-                <Hash className="w-8 h-8 mx-auto mb-3 text-green-400" />
-                <div className="text-2xl font-bold text-white mb-2">{quizData.count}</div>
-                <div className="text-sm text-slate-400">Questions</div>
-              </div>
-
-              {/* Time Limit */}
-              <div className="glass-panel p-6 rounded-2xl text-center">
-                <Clock className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                <div className="text-2xl font-bold text-white mb-2">
-                  {quizData.timeLimit === 0 ? '∞' : `${quizData.timeLimit}m`}
-                </div>
-                <div className="text-sm text-slate-400">Time Limit</div>
-              </div>
-            </div>
-
-            {/* Selected Topics */}
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-white mb-4">Selected Topics:</h3>
-              <div className="flex flex-wrap gap-3">
-                {quizData.topics.map((topic: string, index: number) => (
-                  <span
-                    key={index}
-                    className="glass-panel px-4 py-2 rounded-xl text-sm text-slate-300 border border-purple-400/30"
-                  >
-                    {topic}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Interactive Quick Tips */}
-            <div className="glass-panel p-6 rounded-2xl">
-              <h3 className="text-lg font-semibold text-white mb-6 text-center">Quick Tips</h3>
-              
-              {/* Active Tip Display */}
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 mx-auto glass-panel rounded-2xl flex items-center justify-center mb-4">
-                  {React.createElement(tips[activeTip].icon, { 
-                    className: `w-8 h-8 text-cyan-400` 
-                  })}
-                </div>
-                <h4 className={`text-xl font-bold mb-2 bg-gradient-to-r ${tips[activeTip].color} bg-clip-text text-transparent`}>
-                  {tips[activeTip].title}
-                </h4>
-                <p className="text-slate-300 text-sm max-w-md mx-auto">
-                  {tips[activeTip].description}
-                </p>
-              </div>
-
-              {/* Tip Navigation Dots */}
-              <div className="flex justify-center space-x-2">
-                {tips.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTip(index)}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === activeTip 
-                        ? 'bg-gradient-to-r from-cyan-400 to-blue-500 scale-125' 
-                        : 'bg-slate-600 hover:bg-slate-500'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Motivational Message */}
-          <div className="glass-panel p-8 rounded-3xl mb-12 text-center fade-in-up stagger-2">
-            <div className="text-4xl mb-4">🧠✨</div>
-            <h3 className="text-2xl font-bold text-white mb-4">You've Got This!</h3>
-            <p className="text-slate-300 text-lg max-w-2xl mx-auto leading-relaxed">
-              Remember, this is about learning and growth. Take your time, trust your instincts, 
-              and don't hesitate to make your best educated guess.
-            </p>
-          </div>
-
-          {/* Start Button */}
-          <div className="flex justify-center fade-in-up stagger-3">
-            <button
-              onClick={handleStart}
-              className="premium-button flex items-center space-x-4 text-xl px-12 py-6 relative group overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Play className="w-8 h-8 relative z-10" />
-              <span className="relative z-10">Start Quiz</span>
-            </button>
-          </div>
-        </>
-      ) : (
-        /* Countdown */
-        <div className="text-center fade-in-up">
-          <div className="relative mb-16">
-            <div className="w-64 h-64 mx-auto glass-panel-strong rounded-full flex items-center justify-center">
-              <div className="text-9xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                {countdown}
-              </div>
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-400/20 to-emerald-400/20 animate-ping"></div>
-            </div>
-          </div>
-
-          <h2 className="text-4xl font-bold text-white mb-4">Get Ready!</h2>
-          <p className="text-xl text-slate-300">
-            {countdown === 3 && "Prepare yourself..."}
-            {countdown === 2 && "Focus your mind..."}
-            {countdown === 1 && "Here we go!"}
+          <h1 className="text-5xl md:text-6xl font-bold leading-[1.2] inline-block pb-1 bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+            Get Ready
+          </h1>
+          <p className="mt-2 text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
+            Setting up your test experience. This will be automatic.
           </p>
         </div>
-      )}
+      </div>
     </div>
   );
 };
