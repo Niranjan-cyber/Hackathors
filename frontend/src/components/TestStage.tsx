@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Flag, CheckCircle, ArrowLeft, ArrowRight, Play, Pause, RotateCcw } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { ChevronLeft, ChevronRight, Clock, Flag, CheckCircle } from 'lucide-react';
 
 interface TestStageProps {
   quizData: any;
@@ -11,25 +10,23 @@ interface TestStageProps {
 
 const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeRemaining, setTimeRemaining] = useState(quizData.timeLimit * 60);
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Use pre-generated questions from quizData
-  useEffect(() => {
-    if (quizData.questions && quizData.questions.length > 0) {
-      // Use only the number of questions requested by the user
-      const selectedQuestions = quizData.questions.slice(0, quizData.count);
-      setQuestions(selectedQuestions);
-      setIsLoading(false);
-    } else {
-      // Fallback: if no questions are available, show error
-      toast.error('No questions available. Please go back and try again.');
-      setIsLoading(false);
-    }
-  }, [quizData.questions, quizData.count]);
+  // Mock questions based on quiz data
+  const questions = Array.from({ length: quizData.count }, (_, i) => ({
+    id: `q${i + 1}`,
+    question: `Question ${i + 1}: Which of the following best describes ${quizData.topics[i % quizData.topics.length]}?`,
+    options: [
+      `Option A for ${quizData.topics[i % quizData.topics.length]}`,
+      `Option B for ${quizData.topics[i % quizData.topics.length]}`,
+      `Option C for ${quizData.topics[i % quizData.topics.length]}`,
+      `Option D for ${quizData.topics[i % quizData.topics.length]}`
+    ],
+    correctAnswer: Math.floor(Math.random() * 4),
+    topic: quizData.topics[i % quizData.topics.length]
+  }));
 
   useEffect(() => {
     if (quizData.timeLimit > 0) {
@@ -48,33 +45,22 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
     }
   }, [quizData.timeLimit]);
 
-  const handleAnswer = (questionId: string, answerKey: string) => {
-    setAnswers({ ...answers, [questionId]: answerKey });
+  const handleAnswer = (questionId: string, answerIndex: number) => {
+    setAnswers({ ...answers, [questionId]: answerIndex });
   };
 
   const handleFinish = () => {
     const score = questions.reduce((acc, q) => {
-      const userAnswer = answers[q.id];
-      const correctAnswer = q.correct_answer;
-      return acc + (userAnswer === correctAnswer ? 1 : 0);
+      return acc + (answers[q.id] === q.correctAnswer ? 1 : 0);
     }, 0);
 
-    // Debug logging
-    console.log('TestStage handleFinish - quizData before:', quizData);
-    console.log('TestStage handleFinish - extractedTopics:', quizData.extractedTopics);
-
-    const updatedQuizData = {
+    setQuizData({
       ...quizData,
       answers,
       score,
       timeSpent: quizData.timeLimit * 60 - timeRemaining,
-      questions,
-      extractedTopics: quizData.extractedTopics // Explicitly preserve extractedTopics
-    };
-
-    console.log('TestStage handleFinish - updatedQuizData:', updatedQuizData);
-
-    setQuizData(updatedQuizData);
+      questions
+    });
     setCurrentStage('results');
   };
 
@@ -101,18 +87,6 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
     if (percentage > 0.25) return 'text-amber-400';
     return 'text-red-400';
   };
-
-  if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="glass-panel-strong p-12 rounded-3xl">
-          <div className="animate-spin w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-4">Loading Quiz</h2>
-          <p className="text-slate-400">Preparing your personalized questions...</p>
-        </div>
-      </div>
-    );
-  }
 
   const currentQ = questions[currentQuestion];
   const progress = (currentQuestion + 1) / questions.length * 100;
@@ -176,13 +150,14 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
 
             {/* Options */}
             <div className="space-y-4">
-              {Object.entries(currentQ.options).map(([key, option], index) => {
-                const isSelected = answers[currentQ.id] === key;
+              {currentQ.options.map((option, index) => {
+                const isSelected = answers[currentQ.id] === index;
+                const optionLabels = ['A', 'B', 'C', 'D'];
                 
                 return (
                   <button
-                    key={key}
-                    onClick={() => handleAnswer(currentQ.id, key)}
+                    key={index}
+                    onClick={() => handleAnswer(currentQ.id, index)}
                     className={`
                       w-full text-left p-6 rounded-2xl transition-all duration-300 group
                       ${isSelected 
@@ -199,13 +174,13 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
                           : 'bg-slate-700/50 text-slate-300 group-hover:bg-slate-600/50'
                         }
                       `}>
-                        {key}
+                        {optionLabels[index]}
                       </div>
                       <span className={`
                         text-lg transition-colors duration-300
                         ${isSelected ? 'text-white font-medium' : 'text-slate-300 group-hover:text-white'}
                       `}>
-                        {option as string}
+                        {option}
                       </span>
                     </div>
                   </button>
@@ -221,7 +196,7 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
               disabled={currentQuestion === 0}
               className="glass-panel px-6 py-3 rounded-xl flex items-center space-x-2 text-slate-300 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
               <span>Previous</span>
             </button>
 
@@ -252,7 +227,7 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
                 className="glass-panel px-6 py-3 rounded-xl flex items-center space-x-2 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
               >
                 <span>Next</span>
-                <ArrowRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             )}
           </div>

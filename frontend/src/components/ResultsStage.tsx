@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import ResultsPdf from './ResultsPdf';
 import { Trophy, Download, Mail, RotateCcw, Target, Clock, Brain, Star, ChevronDown, ChevronUp, FileText, X, Repeat } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,11 +16,6 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [isEmailSending, setIsEmailSending] = useState(false);
-  
-  // Debug logging to see what's in quizData
-  console.log('ResultsStage quizData:', quizData);
-  console.log('extractedTopics:', quizData.extractedTopics);
-  console.log('topics:', quizData.topics);
   
   const score = quizData.score || 0;
   const totalQuestions = quizData.questions?.length || quizData.count;
@@ -40,18 +35,13 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   const topicStats = React.useMemo(() => {
     const stats: Record<string, { correct: number; total: number }> = {};
     const questions: any[] = Array.isArray(quizData.questions) ? quizData.questions : [];
-    const answers: Record<string, string> = quizData.answers || {};
-    
+    const answers: Record<string, number> = quizData.answers || {};
     for (const q of questions) {
       const topic = q.topic || 'General';
       if (!stats[topic]) stats[topic] = { correct: 0, total: 0 };
       stats[topic].total += 1;
-      
-      // Handle both snake_case and camelCase for correct answer
-      const correctAnswer = q.correct_answer || q.correctAnswer;
-      if (answers[q.id] === correctAnswer) stats[topic].correct += 1;
+      if (answers[q.id] === q.correctAnswer) stats[topic].correct += 1;
     }
-    
     const entries = Object.entries(stats).map(([topic, { correct, total }]) => ({
       topic,
       correct,
@@ -73,193 +63,30 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   };
 
   const handleRetakeSameTopics = () => {
-    // Use the originally selected topics from the previous quiz
-    const topicsToUse = quizData.topics || quizData.extractedTopics || [];
-    
-    console.log('ResultsStage handleRetakeSameTopics - topicsToUse:', topicsToUse);
-    console.log('ResultsStage handleRetakeSameTopics - quizData before:', quizData);
-    
-    const updatedQuizData = { 
-      ...quizData, 
-      topics: topicsToUse, 
-      presetTopics: true, // This will pre-select the topics in the TopicsStage
-      extractedTopics: quizData.extractedTopics, // Explicitly preserve
-      retakeMode: true // Set retake mode to trigger new question generation
-    };
-    
-    console.log('ResultsStage handleRetakeSameTopics - updatedQuizData:', updatedQuizData);
-    setQuizData(updatedQuizData);
+    const uniqueTopics = Array.from(new Set((quizData.questions || []).map((q: any) => q.topic).filter(Boolean)));
+    const topicsToUse = uniqueTopics.length === 0 && Array.isArray(quizData.topics) ? quizData.topics : uniqueTopics;
+    setQuizData({ ...quizData, topics: topicsToUse, presetTopics: true });
     setCurrentStage('topics');
   };
 
-  const handleRetakeFailedTopics = async () => {
+  const handleRetakeFailedTopics = () => {
     const failed = topicStats.filter(t => t.percent < 50).map(t => t.topic);
     if (failed.length === 0) {
       toast('No failed topics (<50%)', { icon: '✅', duration: 1500 });
       return;
     }
-    
-    console.log('ResultsStage handleRetakeFailedTopics - failed:', failed);
-    console.log('ResultsStage handleRetakeFailedTopics - quizData before:', quizData);
-    
-    try {
-      // Show loading toast
-      const loadingToast = toast.loading('Generating questions for failed topics...');
-      
-      // Call the failed topics API
-      const formData = new FormData();
-      formData.append('failed_topics', JSON.stringify(failed));
-      formData.append('num_questions_per_topic', '3'); // Generate 3 questions per failed topic
-      
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/generate-failed-topics-questions/`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const generatedQuestions = await response.json();
-      console.log('Failed topics questions generated successfully:', generatedQuestions.length);
-      
-      // Dismiss loading toast
-      toast.dismiss(loadingToast);
-      toast.success(`Generated ${generatedQuestions.length} questions for failed topics!`);
-      
-      const updatedQuizData = { 
-        ...quizData, 
-        topics: failed,
-        questions: generatedQuestions, // Use the newly generated questions
-        extractedTopics: quizData.extractedTopics, // Explicitly preserve
-        retakeMode: true // Set retake mode for consistency
-      };
-      
-      console.log('ResultsStage handleRetakeFailedTopics - updatedQuizData:', updatedQuizData);
-      setQuizData(updatedQuizData);
-      setCurrentStage('test'); // Go directly to test stage since we have questions
-      
-    } catch (error) {
-      console.error('Error generating failed topics questions:', error);
-      toast.error('Failed to generate questions for failed topics. Please try again.');
-      
-      // Fallback to original behavior
-      const updatedQuizData = { 
-        ...quizData, 
-        topics: failed,
-        extractedTopics: quizData.extractedTopics, // Explicitly preserve
-        retakeMode: true // Set retake mode to trigger new question generation
-      };
-      
-      setQuizData(updatedQuizData);
-      setCurrentStage('difficulty');
-    }
+    setQuizData({ ...quizData, topics: failed });
+    setCurrentStage('difficulty');
   };
 
   const handleEmailResults = () => setShowEmailModal(true);
 
-  const generatePdfBlob = async () => {
-    try {
-      const pdfDoc = <ResultsPdf quizData={quizData} />;
-      const blob = await pdf(pdfDoc).toBlob();
-      return blob;
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      throw new Error('Failed to generate PDF');
-    }
-  };
-
   const handleSendEmail = async () => {
-    if (!emailInput.trim()) { 
-      toast.error('Please enter a valid email address'); 
-      return; 
-    }
-    
+    if (!emailInput.trim()) { toast.error('Please enter a valid email address'); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailInput)) { 
-      toast.error('Please enter a valid email address'); 
-      return; 
-    }
-
+    if (!emailRegex.test(emailInput)) { toast.error('Please enter a valid email address'); return; }
     setIsEmailSending(true);
-    
-    try {
-      // Show generating PDF toast
-      const pdfToast = toast.loading('Generating PDF...');
-      
-      // Generate PDF blob
-      const pdfBlob = await generatePdfBlob();
-      
-      toast.dismiss(pdfToast);
-      const emailToast = toast.loading('Sending email...');
-      
-      // Create FormData for the email request
-      const formData = new FormData();
-      formData.append('to', emailInput);
-      formData.append('subject', `Neocortex Quiz Results - ${percentage}% Score`);
-      formData.append('body', `Hi there!
-
-Your Neocortex quiz results are attached to this email.
-
-Quiz Summary:
-- Score: ${score}/${totalQuestions} (${percentage}%)
-- Grade: ${grade.grade}
-- Time Spent: ${formatTime(timeSpent)}
-- Topics Covered: ${topicStats.map(t => t.topic).join(', ')}
-
-Keep up the great work with your learning journey!
-
-Best regards,
-Neocortex Team`);
-      
-      // Create a File object from the blob
-      const pdfFile = new File([pdfBlob], 'quiz-results.pdf', { type: 'application/pdf' });
-      formData.append('file', pdfFile);
-
-      // Send email request to backend
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
-
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/send-email`, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      toast.dismiss(emailToast);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send email');
-      }
-
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        toast.success(`Results sent to ${emailInput}!`, { duration: 3000 });
-        setShowEmailModal(false);
-        setEmailInput('');
-      } else {
-        throw new Error(result.message || 'Failed to send email');
-      }
-      
-    } catch (error) {
-      console.error('Email error:', error);
-      
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          toast.error('Email request timed out. Please try again.');
-        } else {
-          toast.error(error.message || 'Failed to send email');
-        }
-      } else {
-        toast.error('Failed to send email');
-      }
-    } finally {
-      setIsEmailSending(false);
-    }
+    setTimeout(() => { setIsEmailSending(false); setShowEmailModal(false); setEmailInput(''); toast.success(`Results sent to ${emailInput}!`, { duration: 1500 }); }, 2000);
   };
 
   const handleDownloadPDF = () => { toast.success('PDF downloaded successfully!', { duration: 1500 }); };
@@ -348,7 +175,7 @@ Neocortex Team`);
                   </linearGradient>
                 </defs>
               </svg>
-
+              
               {/* Center summary */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
@@ -417,32 +244,6 @@ Neocortex Team`);
               </div>
             </div>
           </div>
-
-          <div className="glass-panel p-4 rounded-xl">
-            <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <Brain className="w-5 h-5 mr-2 text-green-400" />
-              Quiz Topics
-            </h4>
-            <div className="space-y-2">
-              {/* Show only the topics user selected for this quiz */}
-              {(() => {
-                const selectedTopics = quizData.topics || [];
-                
-                if (selectedTopics.length === 0) {
-                  return <div className="text-slate-400 text-sm text-center">No topics selected</div>;
-                }
-                
-                return selectedTopics.map((topic: string, index: number) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="text-slate-300 text-sm truncate">{topic}</span>
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-3 h-3 text-yellow-400" />
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -471,9 +272,9 @@ Neocortex Team`);
           {showDetailedReport && (
             <div className="px-6 pb-6 space-y-6 border-t border-slate-700">
               {quizData.questions.map((q: any, idx: number) => {
-                const userAnswer = quizData.answers?.[q.id];
-                const correctAnswer = q.correct_answer || q.correctAnswer;
-                const isCorrect = userAnswer === correctAnswer;
+                const userIdx = quizData.answers?.[q.id];
+                const correctIdx = q.correctAnswer;
+                const isCorrect = userIdx === correctIdx;
                 return (
                   <div key={q.id} className="glass-panel p-6 rounded-2xl">
                     <div className="flex items-center justify-between mb-3">
@@ -482,20 +283,20 @@ Neocortex Team`);
                     </div>
                     <div className="text-white font-semibold mb-4">{q.question}</div>
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
-                      <div className={`${userAnswer === undefined ? 'bg-slate-800/40' : isCorrect ? 'bg-green-500/10' : 'bg-rose-500/10'} p-4 rounded-xl`}>
+                      <div className={`${userIdx === undefined ? 'bg-slate-800/40' : isCorrect ? 'bg-green-500/10' : 'bg-rose-500/10'} p-4 rounded-xl`}>
                         <div className="text-xs text-slate-400 mb-1">Your Answer</div>
                         <div className="text-slate-200 text-sm">
-                          {userAnswer === undefined ? <span className="text-slate-400">Not answered</span> : (<>
-                            <span className="font-semibold text-slate-300 mr-2">{userAnswer}.</span>
-                            {q.options?.[userAnswer]}
+                          {userIdx === undefined ? <span className="text-slate-400">Not answered</span> : (<>
+                            <span className="font-semibold text-slate-300 mr-2">{optionLabels[userIdx]}.</span>
+                            {q.options?.[userIdx]}
                           </>)}
                         </div>
                       </div>
                       <div className="p-4 rounded-xl bg-blue-500/10">
                         <div className="text-xs text-slate-400 mb-1">Correct Answer</div>
                         <div className="text-slate-200 text-sm">
-                          <span className="font-semibold text-slate-300 mr-2">{correctAnswer}.</span>
-                          {q.options?.[correctAnswer]}
+                          <span className="font-semibold text-slate-300 mr-2">{optionLabels[correctIdx]}.</span>
+                          {q.options?.[correctIdx]}
                         </div>
                       </div>
                     </div>

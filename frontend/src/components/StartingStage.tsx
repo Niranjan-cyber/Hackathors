@@ -8,60 +8,16 @@ interface StartingStageProps {
   setCurrentStage: (stage: any) => void;
 }
 
-const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
+const StartingStage: React.FC<StartingStageProps> = ({ setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Check if questions are ready and proceed to test
+  // Auto-advance to test after 10s (temporary until backend signals readiness)
   useEffect(() => {
-    const checkQuestionsAndProceed = async () => {
-      // If questions are ready, check if translation is needed
-      if (quizData.questions && quizData.questions.length > 0) {
-        console.log('Questions ready, checking if translation is needed');
-        console.log('Current language:', quizData.language);
-        
-        // If language is not English, translate the questions
-        if (quizData.language && quizData.language !== 'en') {
-          try {
-            console.log('Translating questions to:', quizData.language);
-            
-            const formData = new FormData();
-            formData.append('questions', JSON.stringify(quizData.questions));
-            formData.append('target_language', quizData.language);
-            
-            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/translate-questions/`, {
-              method: 'POST',
-              body: formData,
-            });
-            
-            if (response.ok) {
-              const translatedQuestions = await response.json();
-              console.log('Questions translated successfully:', translatedQuestions.length);
-              
-              // Update quiz data with translated questions
-              setQuizData((prev: any) => ({
-                ...prev,
-                questions: translatedQuestions
-              }));
-            } else {
-              console.error('Translation failed, continuing with English questions');
-            }
-          } catch (error) {
-            console.error('Error translating questions:', error);
-            // Continue with English questions if translation fails
-          }
-        }
-        
-        // Proceed to test after a short delay
-        setTimeout(() => setCurrentStage('test'), 3000); // 3 second delay for "Get Ready" page
-      } else {
-        console.log('Questions not ready yet, waiting...');
-        // Check again in 2 seconds
-        setTimeout(checkQuestionsAndProceed, 2000);
-      }
-    };
-
-    checkQuestionsAndProceed();
-  }, [quizData.questions, quizData.language, setCurrentStage, setQuizData]);
+    const timer = setTimeout(() => {
+      setCurrentStage('test');
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [setCurrentStage]);
 
   // Full-screen aurora ribbons animation
   useEffect(() => {
@@ -87,10 +43,10 @@ const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData, se
     window.addEventListener('mousemove', onMove);
 
     const colors = [
-      'rgba(34, 211, 238, 0.20)',
-      'rgba(124, 58, 237, 0.20)',
-      'rgba(244, 63, 94, 0.18)',
-      'rgba(59, 130, 246, 0.16)',
+      'rgba(34, 211, 238, 0.20)', // cyan
+      'rgba(124, 58, 237, 0.20)', // purple
+      'rgba(244, 63, 94, 0.18)',  // rose
+      'rgba(59, 130, 246, 0.16)', // blue
     ];
 
     const drawRibbon = (
@@ -169,26 +125,6 @@ const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData, se
       cancelAnimationFrame(raf);
     };
   }, []);
-
-  // Show loading page if questions are not ready
-  if (!quizData.questions || quizData.questions.length === 0) {
-    return (
-      <div className="max-w-4xl mx-auto text-center">
-        <div className="glass-panel-strong p-12 rounded-3xl">
-          <div className="animate-spin w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-4">Generating Questions</h2>
-          <p className="text-slate-400 mb-6">Our AI is creating personalized questions for you...</p>
-          <div className="space-y-2 text-sm text-slate-500">
-            <p>• Analyzing your selected topics</p>
-            <p>• Creating questions based on difficulty level</p>
-            <p>• This may take a few minutes</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-
 
   return (
     <div className="relative min-h-screen">

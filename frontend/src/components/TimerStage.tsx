@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, Clock, Timer, Infinity } from 'lucide-react';
 
 interface TimerStageProps {
@@ -12,7 +12,6 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
   const [timeLimit, setTimeLimit] = useState(quizData.timeLimit && quizData.timeLimit > 0 ? quizData.timeLimit : 30);
   const [customTimeInput, setCustomTimeInput] = useState<string>(String(quizData.timeLimit && quizData.timeLimit > 0 ? quizData.timeLimit : 30));
   const [mode, setMode] = useState<'timed' | 'custom' | 'unlimited'>(quizData.timeLimit === 0 ? 'unlimited' : 'timed');
-  const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
 
   const timePresets = [
     { minutes: 10, label: 'Quick', desc: 'Speed challenge' },
@@ -20,82 +19,6 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
     { minutes: 30, label: 'Relaxed', desc: 'Thoughtful answers' },
     { minutes: 45, label: 'Extended', desc: 'No pressure' }
   ];
-
-
-
-  // Generate questions from backend when component mounts or when retaking quiz
-  useEffect(() => {
-    console.log('TimerStage useEffect triggered with:', {
-      topics: quizData.topics,
-      difficulty: quizData.difficulty,
-      count: quizData.count,
-      language: quizData.language,
-      retakeMode: quizData.retakeMode
-    });
-    
-    const generateQuestions = async () => {
-      // Check if we need to generate new questions (either no questions exist or we're retaking)
-      const shouldGenerate = !quizData.questions || quizData.questions.length === 0 || quizData.retakeMode;
-
-      if (!shouldGenerate) {
-        console.log('Questions already exist and not in retake mode, skipping generation');
-        return;
-      }
-
-      if (hasStartedGeneration) {
-        console.log('Generation already started, skipping');
-        return;
-      }
-
-      console.log('Starting question generation...');
-      console.log('Current quizData:', quizData);
-      console.log('Selected language:', quizData.language);
-      console.log('Language type:', typeof quizData.language);
-      setHasStartedGeneration(true);
-
-      try {
-        const formData = new FormData();
-        formData.append('topics', JSON.stringify(quizData.topics));
-        formData.append('difficulty', quizData.difficulty);
-        formData.append('num_questions', quizData.count.toString());
-        formData.append('language', 'en'); // Always generate in English first
-
-        console.log('Sending API request...');
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/generate-questions/`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        console.log('API response received:', response.status);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const generatedQuestions = await response.json();
-        console.log('Questions generated successfully:', generatedQuestions.length);
-        
-        // Store questions in English (translation will happen in StartingStage if needed)
-        setQuizData((prev: any) => ({ 
-          ...prev, 
-          questions: generatedQuestions,
-          retakeMode: false // Reset retake mode after generating questions
-        }));
-      } catch (error) {
-        console.error('Error generating questions:', error);
-        
-        if (error instanceof Error) {
-          console.error(`Failed to generate questions: ${error.message}`);
-        } else {
-          console.error('Failed to generate questions. Please try again.');
-        }
-        
-        setHasStartedGeneration(false); // Allow retry
-      }
-    };
-
-    generateQuestions();
-  }, [quizData.topics, quizData.difficulty, quizData.count, quizData.language, quizData.retakeMode]); // Run when these values change
 
   const handleNext = () => {
     setQuizData({ ...quizData, timeLimit: mode === 'unlimited' ? 0 : timeLimit });

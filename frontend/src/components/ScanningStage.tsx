@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Brain } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 interface ScanningStageProps {
   quizData: any;
@@ -12,89 +11,14 @@ interface ScanningStageProps {
 const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [extractionStatus, setExtractionStatus] = useState<string>('Initializing...');
-  const [extractedTopics, setExtractedTopics] = useState<string[]>([]);
 
-  // Extract topics from the uploaded file
+  // Auto-advance after a short, pleasant animation
   useEffect(() => {
-    const extractTopics = async () => {
-      if (!quizData.file) {
-        setExtractionStatus('No file found');
-        setTimeout(() => setCurrentStage('topics'), 2000);
-        return;
-      }
-
-      try {
-        setExtractionStatus('Uploading file...');
-        
-        const formData = new FormData();
-        formData.append('file', quizData.file);
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
-
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/extract-topics/`, {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error('Failed to extract topics');
-        }
-
-        const topics = await response.json();
-        
-        // Debug logging
-        console.log('Backend response:', topics);
-        console.log('Response type:', typeof topics);
-        
-        // Extract topics array from dictionary response
-        const topicsArray = topics?.topics || [];
-        setExtractedTopics(topicsArray);
-        setExtractionStatus('Topics extracted successfully!');
-        
-        // Store extracted topics in quiz data
-        console.log('ScanningStage - storing topicsArray:', topicsArray);
-        setQuizData((prev: any) => {
-          const updated = {
-            ...prev,
-            extractedTopics: topicsArray
-          };
-          console.log('ScanningStage - updated quizData:', updated);
-          return updated;
-        });
-
-        // Wait a bit to show success message, then proceed
-        setTimeout(() => setCurrentStage('topics'), 2000);
-        
-      } catch (error) {
-        console.error('Error extracting topics:', error);
-        
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            setExtractionStatus('Extraction timed out, using default topics');
-            toast.error('Topic extraction timed out. Using default topics.');
-          } else {
-            setExtractionStatus('Extraction failed, using default topics');
-            toast.error(`Failed to extract topics: ${error.message}. Using default topics.`);
-          }
-        } else {
-          setExtractionStatus('Extraction failed, using default topics');
-          toast.error('Failed to extract topics from file. Using default topics.');
-        }
-        
-        // Still proceed to topics stage with empty extracted topics
-        setTimeout(() => setCurrentStage('topics'), 2000);
-      }
-    };
-
-    // Start extraction after a short delay for visual effect
-    const timer = setTimeout(extractTopics, 2000);
+    const timer = setTimeout(() => {
+      setCurrentStage('topics');
+    }, 10000);
     return () => clearTimeout(timer);
-  }, [quizData.file, setQuizData, setCurrentStage]);
+  }, [setCurrentStage]);
 
   // Radar canvas animation (static, not tied to model)
   useEffect(() => {
@@ -216,8 +140,6 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
       <div className="flex justify-center mb-16">
         <canvas ref={canvasRef} className="rounded-full shadow-[0_0_60px_rgba(34,211,238,0.15)]" />
       </div>
-
-
 
       {/* Fun tag line (static) */}
       <div className="text-slate-400 text-sm">
