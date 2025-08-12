@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Brain } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface ScanningStageProps {
   quizData: any;
@@ -11,14 +12,67 @@ interface ScanningStageProps {
 const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [extractionStatus, setExtractionStatus] = useState<string>('Initializing...');
+  const [extractedTopics, setExtractedTopics] = useState<string[]>([]);
 
-  // Auto-advance after a short, pleasant animation
+  // Extract topics from the uploaded file
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentStage('topics');
-    }, 10000);
+    const extractTopics = async () => {
+      if (!quizData.file) {
+        setExtractionStatus('No file found');
+        setTimeout(() => setCurrentStage('topics'), 2000);
+        return;
+      }
+
+      try {
+        setExtractionStatus('Uploading file...');
+        
+        const formData = new FormData();
+        formData.append('file', quizData.file);
+
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/extract-topics/`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to extract topics');
+        }
+
+        const topics = await response.json();
+        
+        // Debug logging
+        console.log('Backend response:', topics);
+        console.log('Response type:', typeof topics);
+        
+        // Extract topics array from dictionary response
+        const topicsArray = topics?.topics || [];
+        setExtractedTopics(topicsArray);
+        setExtractionStatus('Topics extracted successfully!');
+        
+        // Store extracted topics in quiz data
+        setQuizData((prev: any) => ({
+          ...prev,
+          extractedTopics: topicsArray
+        }));
+
+        // Wait a bit to show success message, then proceed
+        setTimeout(() => setCurrentStage('topics'), 2000);
+        
+      } catch (error) {
+        console.error('Error extracting topics:', error);
+        setExtractionStatus('Extraction failed, using default topics');
+        toast.error('Failed to extract topics from file. Using default topics.');
+        
+        // Still proceed to topics stage with empty extracted topics
+        setTimeout(() => setCurrentStage('topics'), 2000);
+      }
+    };
+
+    // Start extraction after a short delay for visual effect
+    const timer = setTimeout(extractTopics, 2000);
     return () => clearTimeout(timer);
-  }, [setCurrentStage]);
+  }, [quizData.file, setQuizData, setCurrentStage]);
 
   // Radar canvas animation (static, not tied to model)
   useEffect(() => {
@@ -139,6 +193,17 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
       {/* Radar animation */}
       <div className="flex justify-center mb-16">
         <canvas ref={canvasRef} className="rounded-full shadow-[0_0_60px_rgba(34,211,238,0.15)]" />
+      </div>
+
+      {/* Status message */}
+      <div className="glass-panel-strong p-6 rounded-2xl max-w-md mx-auto mb-8">
+        <div className="text-cyan-400 font-semibold mb-2">Status</div>
+        <div className="text-white">{extractionStatus}</div>
+        {extractedTopics.length > 0 && (
+          <div className="text-slate-400 text-sm mt-2">
+            Found {extractedTopics.length} topics
+          </div>
+        )}
       </div>
 
       {/* Fun tag line (static) */}

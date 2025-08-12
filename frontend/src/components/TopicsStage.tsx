@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Tag, Check, Brain, Search, Plus } from 'lucide-react';
+import { ArrowRight, Tag, Check, Brain, Search, Plus, Sparkles } from 'lucide-react';
 
 interface TopicsStageProps {
   quizData: any;
@@ -16,8 +16,32 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
     'System Design', 'Programming Languages', 'Software Testing'
   ];
 
-  const [allTopics, setAllTopics] = useState<string[]>(baseTopics);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>(quizData.presetTopics ? (quizData.topics || []) : []);
+  // Get extracted topics from quiz data
+  const extractedTopics = quizData.extractedTopics || [];
+  
+  // Debug logging
+  console.log('QuizData:', quizData);
+  console.log('ExtractedTopics:', extractedTopics);
+  console.log('ExtractedTopics length:', extractedTopics.length);
+  
+  // Combine extracted topics with base topics, prioritizing extracted ones
+  const allTopics = useMemo(() => {
+    const combined = [...extractedTopics];
+    
+    // Add base topics that aren't already in extracted topics
+    baseTopics.forEach(topic => {
+      if (!combined.some(t => t.toLowerCase() === topic.toLowerCase())) {
+        combined.push(topic);
+      }
+    });
+    
+    console.log('AllTopics combined:', combined);
+    return combined;
+  }, [extractedTopics]);
+
+  const [selectedTopics, setSelectedTopics] = useState<string[]>(
+    quizData.presetTopics ? (quizData.topics || []) : []
+  );
   const [search, setSearch] = useState('');
   const [customTopic, setCustomTopic] = useState('');
 
@@ -38,7 +62,6 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
   const handleAddCustomTopic = () => {
     const t = customTopic.trim();
     if (!t) return;
-    if (!allTopics.includes(t)) setAllTopics(prev => [...prev, t]);
     if (!selectedTopics.includes(t)) setSelectedTopics(prev => [...prev, t]);
     setCustomTopic('');
   };
@@ -46,6 +69,10 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
   const handleNext = () => {
     setQuizData({ ...quizData, topics: selectedTopics, presetTopics: false });
     setCurrentStage('difficulty');
+  };
+
+  const isExtractedTopic = (topic: string) => {
+    return extractedTopics.some((t: string) => t.toLowerCase() === topic.toLowerCase());
   };
 
   return (
@@ -61,9 +88,28 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
           Select Topics
         </h1>
         <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-          Choose the topics you want to focus on. Our AI has identified these key areas from your content.
+          {extractedTopics.length > 0 
+            ? `Our AI has identified ${extractedTopics.length} key topics from your content. You can also select additional topics.`
+            : 'Choose the topics you want to focus on. Our AI has identified these key areas from your content.'
+          }
         </p>
       </div>
+
+      {/* Extracted Topics Section */}
+      {extractedTopics.length > 0 && (
+        <div className="mb-8 fade-in-up">
+          <div className="flex items-center gap-3 mb-4">
+            <Sparkles className="w-6 h-6 text-cyan-400" />
+            <h2 className="text-2xl font-bold text-white">AI Extracted Topics</h2>
+            <div className="px-3 py-1 bg-cyan-400/20 text-cyan-400 rounded-full text-sm font-semibold">
+              {extractedTopics.length} found
+            </div>
+          </div>
+          <p className="text-slate-400 mb-4">
+            These topics were automatically identified from your uploaded content.
+          </p>
+        </div>
+      )}
 
       {/* Search bar */}
       <div className="max-w-2xl mx-auto mb-8 fade-in-up">
@@ -98,6 +144,8 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
       <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
         {filteredTopics.map((topic, index) => {
           const isSelected = selectedTopics.includes(topic);
+          const isExtracted = isExtractedTopic(topic);
+          
           return (
             <div
               key={topic}
@@ -105,17 +153,33 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
               className={`
                 relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all duration-300 group fade-in-up
                 ${isSelected 
-                  ? 'glass-panel-strong scale-105 neon-glow' 
-                  : 'glass-panel hover:scale-105'
+                  ? isExtracted 
+                    ? 'glass-panel-strong scale-105 neon-glow border-2 border-cyan-400/50' 
+                    : 'glass-panel-strong scale-105 neon-glow'
+                  : isExtracted
+                    ? 'glass-panel border-2 border-cyan-400/30 hover:scale-105 hover:border-cyan-400/50'
+                    : 'glass-panel hover:scale-105'
                 }
               `}
               style={{ animationDelay: `${index * 0.04}s` }}
             >
+              {/* AI Extracted Badge */}
+              {isExtracted && (
+                <div className="absolute top-2 left-2 z-10">
+                  <div className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    AI
+                  </div>
+                </div>
+              )}
+
               {/* Selection Indicator */}
               <div className={`
                 absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
                 ${isSelected 
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-400 border-transparent' 
+                  ? isExtracted
+                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 border-transparent' 
+                    : 'bg-gradient-to-r from-purple-400 to-pink-500 border-transparent'
                   : 'border-slate-500 group-hover:border-cyan-400'
                 }
               `}>
@@ -123,7 +187,7 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
               </div>
 
               {/* Topic Content */}
-              <div className="pr-8">
+              <div className={`pr-8 ${isExtracted ? 'pt-6' : ''}`}>
                 <h3 className={`
                   text-lg font-semibold transition-colors duration-300
                   ${isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'}
@@ -133,11 +197,23 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
               </div>
 
               {/* Hover Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/5 to-purple-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+              <div className={`
+                absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl
+                ${isExtracted 
+                  ? 'bg-gradient-to-r from-cyan-400/5 to-blue-400/5' 
+                  : 'bg-gradient-to-r from-purple-400/5 to-pink-400/5'
+                }
+              `} />
               
               {/* Selection Ripple */}
               {isSelected && (
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 to-purple-400/10 rounded-2xl animate-pulse" />
+                <div className={`
+                  absolute inset-0 rounded-2xl animate-pulse
+                  ${isExtracted 
+                    ? 'bg-gradient-to-r from-cyan-400/10 to-blue-400/10' 
+                    : 'bg-gradient-to-r from-purple-400/10 to-pink-400/10'
+                  }
+                `} />
               )}
             </div>
           );

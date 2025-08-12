@@ -26,9 +26,9 @@ async def extract_topics(file: UploadFile = File(...)):
             f.write(extracted_text)
 
         # Step 2: Extract topics
-        topics = extract_topics_from_pdf_text(extracted_text)
+        topics_result = extract_topics_from_pdf_text(extracted_text)
 
-        return topics
+        return topics_result
     finally:
         # Clean up temp file
         if os.path.exists(temp_file_path):

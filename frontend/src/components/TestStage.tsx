@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Flag, CheckCircle } from 'lucide-react';
+import { Clock, Flag, CheckCircle, ArrowLeft, ArrowRight, Play, Pause, RotateCcw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface TestStageProps {
   quizData: any;
@@ -10,23 +11,56 @@ interface TestStageProps {
 
 const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeRemaining, setTimeRemaining] = useState(quizData.timeLimit * 60);
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock questions based on quiz data
-  const questions = Array.from({ length: quizData.count }, (_, i) => ({
-    id: `q${i + 1}`,
-    question: `Question ${i + 1}: Which of the following best describes ${quizData.topics[i % quizData.topics.length]}?`,
-    options: [
-      `Option A for ${quizData.topics[i % quizData.topics.length]}`,
-      `Option B for ${quizData.topics[i % quizData.topics.length]}`,
-      `Option C for ${quizData.topics[i % quizData.topics.length]}`,
-      `Option D for ${quizData.topics[i % quizData.topics.length]}`
-    ],
-    correctAnswer: Math.floor(Math.random() * 4),
-    topic: quizData.topics[i % quizData.topics.length]
-  }));
+  // Generate questions from backend
+  useEffect(() => {
+    const generateQuestions = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('topics', JSON.stringify(quizData.topics));
+        formData.append('difficulty', quizData.difficulty);
+        formData.append('num_questions', quizData.count.toString());
+
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/generate-questions/`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate questions');
+        }
+
+        const generatedQuestions = await response.json();
+        setQuestions(generatedQuestions);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error generating questions:', error);
+        toast.error('Failed to generate questions. Using mock questions.');
+        // Fallback to mock questions
+        const mockQuestions = Array.from({ length: quizData.count }, (_, i) => ({
+          id: `q${i + 1}`,
+          question: `Question ${i + 1}: Which of the following best describes ${quizData.topics[i % quizData.topics.length]}?`,
+          options: {
+            "A": `Option A for ${quizData.topics[i % quizData.topics.length]}`,
+            "B": `Option B for ${quizData.topics[i % quizData.topics.length]}`,
+            "C": `Option C for ${quizData.topics[i % quizData.topics.length]}`,
+            "D": `Option D for ${quizData.topics[i % quizData.topics.length]}`
+          },
+          correct_answer: "A",
+          topics: [quizData.topics[i % quizData.topics.length]]
+        }));
+        setQuestions(mockQuestions);
+        setIsLoading(false);
+      }
+    };
+
+    generateQuestions();
+  }, [quizData.topics, quizData.difficulty, quizData.count]);
 
   useEffect(() => {
     if (quizData.timeLimit > 0) {
@@ -45,13 +79,15 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
     }
   }, [quizData.timeLimit]);
 
-  const handleAnswer = (questionId: string, answerIndex: number) => {
-    setAnswers({ ...answers, [questionId]: answerIndex });
+  const handleAnswer = (questionId: string, answerKey: string) => {
+    setAnswers({ ...answers, [questionId]: answerKey });
   };
 
   const handleFinish = () => {
     const score = questions.reduce((acc, q) => {
-      return acc + (answers[q.id] === q.correctAnswer ? 1 : 0);
+      const userAnswer = answers[q.id];
+      const correctAnswer = q.correct_answer;
+      return acc + (userAnswer === correctAnswer ? 1 : 0);
     }, 0);
 
     setQuizData({
@@ -87,6 +123,18 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
     if (percentage > 0.25) return 'text-amber-400';
     return 'text-red-400';
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="glass-panel-strong p-12 rounded-3xl">
+          <div className="animate-spin w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-white mb-4">Generating Questions</h2>
+          <p className="text-slate-400">Our AI is creating personalized questions for you...</p>
+        </div>
+      </div>
+    );
+  }
 
   const currentQ = questions[currentQuestion];
   const progress = (currentQuestion + 1) / questions.length * 100;
@@ -150,14 +198,13 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
 
             {/* Options */}
             <div className="space-y-4">
-              {currentQ.options.map((option, index) => {
-                const isSelected = answers[currentQ.id] === index;
-                const optionLabels = ['A', 'B', 'C', 'D'];
+              {Object.entries(currentQ.options).map(([key, option], index) => {
+                const isSelected = answers[currentQ.id] === key;
                 
                 return (
                   <button
-                    key={index}
-                    onClick={() => handleAnswer(currentQ.id, index)}
+                    key={key}
+                    onClick={() => handleAnswer(currentQ.id, key)}
                     className={`
                       w-full text-left p-6 rounded-2xl transition-all duration-300 group
                       ${isSelected 
@@ -174,13 +221,13 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
                           : 'bg-slate-700/50 text-slate-300 group-hover:bg-slate-600/50'
                         }
                       `}>
-                        {optionLabels[index]}
+                        {key}
                       </div>
                       <span className={`
                         text-lg transition-colors duration-300
                         ${isSelected ? 'text-white font-medium' : 'text-slate-300 group-hover:text-white'}
                       `}>
-                        {option}
+                        {option as string}
                       </span>
                     </div>
                   </button>
@@ -196,7 +243,7 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
               disabled={currentQuestion === 0}
               className="glass-panel px-6 py-3 rounded-xl flex items-center space-x-2 text-slate-300 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 disabled:hover:scale-100"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
               <span>Previous</span>
             </button>
 
@@ -227,7 +274,7 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
                 className="glass-panel px-6 py-3 rounded-xl flex items-center space-x-2 text-slate-300 hover:text-white transition-all duration-300 hover:scale-105"
               >
                 <span>Next</span>
-                <ChevronRight className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5" />
               </button>
             )}
           </div>

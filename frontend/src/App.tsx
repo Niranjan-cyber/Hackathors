@@ -20,6 +20,7 @@ type Stage = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer'
 interface QuizData {
   file?: File;
   topics: string[];
+  extractedTopics?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
   count: number;
   timeLimit: number;
