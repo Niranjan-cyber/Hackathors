@@ -1,0 +1,46 @@
+{
+    "Artificial Intelligence": [
+        {
+            "question": "Which of the following is NOT a common application of artificial intelligence?",
+            "options": [
+                "Self-driving cars",
+                "Medical diagnosis",
+                "Creating art",
+                "Manual calculation"
+            ],
+            "answer": "Option D"
+        },
+        {
+            "question": "What is machine learning?",
+            "options": [
+                "A type of artificial intelligence that allows software applications to become more accurate in predicting outcomes without being explicitly programmed",
+                "A type of artificial intelligence that involves creating human-like robots",
+                "The process of manually inputting data into a computer system",
+                "A branch of computer science focused on building hardware"
+            ],
+            "answer": "Option A"
+        }
+    ],
+    "Renewable Energy": [
+        {
+            "question": "Which of the following is NOT a renewable energy source?",
+            "options": [
+                "Solar power",
+                "Wind power",
+                "Natural gas",
+                "Hydropower"
+            ],
+            "answer": "Natural gas"
+        },
+        {
+            "question": "What is the primary environmental benefit of using renewable energy sources?",
+            "options": [
+                "Increased air pollution",
+                "Depletion of natural resources",
+                "Reduction in greenhouse gas emissions",
+                "Increased reliance on fossil fuels"
+            ],
+            "answer": "Reduction in greenhouse gas emissions"
+        }
+    ]
+}
