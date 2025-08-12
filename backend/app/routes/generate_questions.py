@@ -1,4 +1,5 @@
 import asyncio
+import time
 from fastapi import APIRouter, HTTPException, Form
 import json
 import sys
@@ -33,7 +34,7 @@ def validate_input(topics_list: list, difficulty: str, num_questions: int) -> tu
 
 # --- API Endpoint ---
 @router.post("/generate-questions/")
-async def generate_questions(
+def generate_questions(
     topics: str = Form(...),         # JSON string or comma-separated
     difficulty: str = Form(...),
     num_questions: int = Form(...)
@@ -83,7 +84,11 @@ async def generate_questions(
 
     try:
         log(f"Generating {num_questions} questions for topics: {topics_list} with difficulty: {difficulty}")
+        log(f"Starting MCQ generation at {time.time()}")
+        
         generated_questions = mcq_generator.main(model_input)
+        
+        log(f"MCQ generation completed at {time.time()}")
         
         if isinstance(generated_questions, list) and generated_questions:
             log(f"Successfully generated {len(generated_questions)} questions from the local model.")

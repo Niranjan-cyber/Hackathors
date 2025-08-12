@@ -17,50 +17,19 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
   const [questions, setQuestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Generate questions from backend
+  // Use pre-generated questions from quizData
   useEffect(() => {
-    const generateQuestions = async () => {
-      try {
-        const formData = new FormData();
-        formData.append('topics', JSON.stringify(quizData.topics));
-        formData.append('difficulty', quizData.difficulty);
-        formData.append('num_questions', quizData.count.toString());
-
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/generate-questions/`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to generate questions');
-        }
-
-        const generatedQuestions = await response.json();
-        setQuestions(generatedQuestions);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error generating questions:', error);
-        toast.error('Failed to generate questions. Using mock questions.');
-        // Fallback to mock questions
-        const mockQuestions = Array.from({ length: quizData.count }, (_, i) => ({
-          id: `q${i + 1}`,
-          question: `Question ${i + 1}: Which of the following best describes ${quizData.topics[i % quizData.topics.length]}?`,
-          options: {
-            "A": `Option A for ${quizData.topics[i % quizData.topics.length]}`,
-            "B": `Option B for ${quizData.topics[i % quizData.topics.length]}`,
-            "C": `Option C for ${quizData.topics[i % quizData.topics.length]}`,
-            "D": `Option D for ${quizData.topics[i % quizData.topics.length]}`
-          },
-          correct_answer: "A",
-          topics: [quizData.topics[i % quizData.topics.length]]
-        }));
-        setQuestions(mockQuestions);
-        setIsLoading(false);
-      }
-    };
-
-    generateQuestions();
-  }, [quizData.topics, quizData.difficulty, quizData.count]);
+    if (quizData.questions && quizData.questions.length > 0) {
+      // Use only the number of questions requested by the user
+      const selectedQuestions = quizData.questions.slice(0, quizData.count);
+      setQuestions(selectedQuestions);
+      setIsLoading(false);
+    } else {
+      // Fallback: if no questions are available, show error
+      toast.error('No questions available. Please go back and try again.');
+      setIsLoading(false);
+    }
+  }, [quizData.questions, quizData.count]);
 
   useEffect(() => {
     if (quizData.timeLimit > 0) {
@@ -90,13 +59,22 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
       return acc + (userAnswer === correctAnswer ? 1 : 0);
     }, 0);
 
-    setQuizData({
+    // Debug logging
+    console.log('TestStage handleFinish - quizData before:', quizData);
+    console.log('TestStage handleFinish - extractedTopics:', quizData.extractedTopics);
+
+    const updatedQuizData = {
       ...quizData,
       answers,
       score,
       timeSpent: quizData.timeLimit * 60 - timeRemaining,
-      questions
-    });
+      questions,
+      extractedTopics: quizData.extractedTopics // Explicitly preserve extractedTopics
+    };
+
+    console.log('TestStage handleFinish - updatedQuizData:', updatedQuizData);
+
+    setQuizData(updatedQuizData);
     setCurrentStage('results');
   };
 
@@ -129,8 +107,8 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
       <div className="max-w-4xl mx-auto text-center">
         <div className="glass-panel-strong p-12 rounded-3xl">
           <div className="animate-spin w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-4">Generating Questions</h2>
-          <p className="text-slate-400">Our AI is creating personalized questions for you...</p>
+          <h2 className="text-2xl font-bold text-white mb-4">Loading Quiz</h2>
+          <p className="text-slate-400">Preparing your personalized questions...</p>
         </div>
       </div>
     );

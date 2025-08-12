@@ -8,16 +8,25 @@ interface StartingStageProps {
   setCurrentStage: (stage: any) => void;
 }
 
-const StartingStage: React.FC<StartingStageProps> = ({ setCurrentStage }) => {
+const StartingStage: React.FC<StartingStageProps> = ({ quizData, setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Auto-advance to test after 10s (temporary until backend signals readiness)
+  // Check if questions are ready and proceed to test
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentStage('test');
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, [setCurrentStage]);
+    const checkQuestionsAndProceed = () => {
+      // If questions are ready, proceed to test after a short delay
+      if (quizData.questions && quizData.questions.length > 0) {
+        console.log('Questions ready, proceeding to test');
+        setTimeout(() => setCurrentStage('test'), 3000); // 3 second delay for "Get Ready" page
+      } else {
+        console.log('Questions not ready yet, waiting...');
+        // Check again in 2 seconds
+        setTimeout(checkQuestionsAndProceed, 2000);
+      }
+    };
+
+    checkQuestionsAndProceed();
+  }, [quizData.questions, setCurrentStage]);
 
   // Full-screen aurora ribbons animation
   useEffect(() => {
@@ -125,6 +134,24 @@ const StartingStage: React.FC<StartingStageProps> = ({ setCurrentStage }) => {
       cancelAnimationFrame(raf);
     };
   }, []);
+
+  // Show loading page if questions are not ready
+  if (!quizData.questions || quizData.questions.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="glass-panel-strong p-12 rounded-3xl">
+          <div className="animate-spin w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-white mb-4">Generating Questions</h2>
+          <p className="text-slate-400 mb-6">Our AI is creating personalized questions for you...</p>
+          <div className="space-y-2 text-sm text-slate-500">
+            <p>• Analyzing your selected topics</p>
+            <p>• Creating questions based on difficulty level</p>
+            <p>• This may take a few minutes</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen">

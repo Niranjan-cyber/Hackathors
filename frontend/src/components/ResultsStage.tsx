@@ -17,6 +17,11 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   const [emailInput, setEmailInput] = useState('');
   const [isEmailSending, setIsEmailSending] = useState(false);
   
+  // Debug logging to see what's in quizData
+  console.log('ResultsStage quizData:', quizData);
+  console.log('extractedTopics:', quizData.extractedTopics);
+  console.log('topics:', quizData.topics);
+  
   const score = quizData.score || 0;
   const totalQuestions = quizData.questions?.length || quizData.count;
   const percentage = Math.round((score / totalQuestions) * 100);
@@ -35,13 +40,18 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   const topicStats = React.useMemo(() => {
     const stats: Record<string, { correct: number; total: number }> = {};
     const questions: any[] = Array.isArray(quizData.questions) ? quizData.questions : [];
-    const answers: Record<string, number> = quizData.answers || {};
+    const answers: Record<string, string> = quizData.answers || {};
+    
     for (const q of questions) {
       const topic = q.topic || 'General';
       if (!stats[topic]) stats[topic] = { correct: 0, total: 0 };
       stats[topic].total += 1;
-      if (answers[q.id] === q.correctAnswer) stats[topic].correct += 1;
+      
+      // Handle both snake_case and camelCase for correct answer
+      const correctAnswer = q.correct_answer || q.correctAnswer;
+      if (answers[q.id] === correctAnswer) stats[topic].correct += 1;
     }
+    
     const entries = Object.entries(stats).map(([topic, { correct, total }]) => ({
       topic,
       correct,
@@ -64,8 +74,21 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
 
   const handleRetakeSameTopics = () => {
     const uniqueTopics = Array.from(new Set((quizData.questions || []).map((q: any) => q.topic).filter(Boolean)));
-    const topicsToUse = uniqueTopics.length === 0 && Array.isArray(quizData.topics) ? quizData.topics : uniqueTopics;
-    setQuizData({ ...quizData, topics: topicsToUse, presetTopics: true });
+    const topicsToUse = uniqueTopics.length === 0 && Array.isArray(quizData.extractedTopics) ? quizData.extractedTopics : uniqueTopics;
+    
+    console.log('ResultsStage handleRetakeSameTopics - uniqueTopics:', uniqueTopics);
+    console.log('ResultsStage handleRetakeSameTopics - topicsToUse:', topicsToUse);
+    console.log('ResultsStage handleRetakeSameTopics - quizData before:', quizData);
+    
+    const updatedQuizData = { 
+      ...quizData, 
+      topics: topicsToUse, 
+      presetTopics: true,
+      extractedTopics: quizData.extractedTopics // Explicitly preserve
+    };
+    
+    console.log('ResultsStage handleRetakeSameTopics - updatedQuizData:', updatedQuizData);
+    setQuizData(updatedQuizData);
     setCurrentStage('topics');
   };
 
@@ -75,7 +98,18 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
       toast('No failed topics (<50%)', { icon: '✅', duration: 1500 });
       return;
     }
-    setQuizData({ ...quizData, topics: failed });
+    
+    console.log('ResultsStage handleRetakeFailedTopics - failed:', failed);
+    console.log('ResultsStage handleRetakeFailedTopics - quizData before:', quizData);
+    
+    const updatedQuizData = { 
+      ...quizData, 
+      topics: failed,
+      extractedTopics: quizData.extractedTopics // Explicitly preserve
+    };
+    
+    console.log('ResultsStage handleRetakeFailedTopics - updatedQuizData:', updatedQuizData);
+    setQuizData(updatedQuizData);
     setCurrentStage('difficulty');
   };
 
@@ -140,10 +174,16 @@ Neocortex Team`);
       formData.append('file', pdfFile);
 
       // Send email request to backend
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 1 minute timeout
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/send-email`, {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       toast.dismiss(emailToast);
 
@@ -164,7 +204,16 @@ Neocortex Team`);
       
     } catch (error) {
       console.error('Email error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to send email');
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          toast.error('Email request timed out. Please try again.');
+        } else {
+          toast.error(error.message || 'Failed to send email');
+        }
+      } else {
+        toast.error('Failed to send email');
+      }
     } finally {
       setIsEmailSending(false);
     }
@@ -325,6 +374,32 @@ Neocortex Team`);
               </div>
             </div>
           </div>
+
+          <div className="glass-panel p-4 rounded-xl">
+            <h4 className="text-lg font-semibold text-white mb-3 flex items-center">
+              <Brain className="w-5 h-5 mr-2 text-green-400" />
+              Quiz Topics
+            </h4>
+            <div className="space-y-2">
+              {/* Show only the topics user selected for this quiz */}
+              {(() => {
+                const selectedTopics = quizData.topics || [];
+                
+                if (selectedTopics.length === 0) {
+                  return <div className="text-slate-400 text-sm text-center">No topics selected</div>;
+                }
+                
+                return selectedTopics.map((topic: string, index: number) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-slate-300 text-sm truncate">{topic}</span>
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-3 h-3 text-yellow-400" />
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -353,9 +428,9 @@ Neocortex Team`);
           {showDetailedReport && (
             <div className="px-6 pb-6 space-y-6 border-t border-slate-700">
               {quizData.questions.map((q: any, idx: number) => {
-                const userIdx = quizData.answers?.[q.id];
-                const correctIdx = q.correctAnswer;
-                const isCorrect = userIdx === correctIdx;
+                const userAnswer = quizData.answers?.[q.id];
+                const correctAnswer = q.correct_answer || q.correctAnswer;
+                const isCorrect = userAnswer === correctAnswer;
                 return (
                   <div key={q.id} className="glass-panel p-6 rounded-2xl">
                     <div className="flex items-center justify-between mb-3">
@@ -364,20 +439,20 @@ Neocortex Team`);
                     </div>
                     <div className="text-white font-semibold mb-4">{q.question}</div>
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
-                      <div className={`${userIdx === undefined ? 'bg-slate-800/40' : isCorrect ? 'bg-green-500/10' : 'bg-rose-500/10'} p-4 rounded-xl`}>
+                      <div className={`${userAnswer === undefined ? 'bg-slate-800/40' : isCorrect ? 'bg-green-500/10' : 'bg-rose-500/10'} p-4 rounded-xl`}>
                         <div className="text-xs text-slate-400 mb-1">Your Answer</div>
                         <div className="text-slate-200 text-sm">
-                          {userIdx === undefined ? <span className="text-slate-400">Not answered</span> : (<>
-                            <span className="font-semibold text-slate-300 mr-2">{optionLabels[userIdx]}.</span>
-                            {q.options?.[userIdx]}
+                          {userAnswer === undefined ? <span className="text-slate-400">Not answered</span> : (<>
+                            <span className="font-semibold text-slate-300 mr-2">{userAnswer}.</span>
+                            {q.options?.[userAnswer]}
                           </>)}
                         </div>
                       </div>
                       <div className="p-4 rounded-xl bg-blue-500/10">
                         <div className="text-xs text-slate-400 mb-1">Correct Answer</div>
                         <div className="text-slate-200 text-sm">
-                          <span className="font-semibold text-slate-300 mr-2">{optionLabels[correctIdx]}.</span>
-                          {q.options?.[correctIdx]}
+                          <span className="font-semibold text-slate-300 mr-2">{correctAnswer}.</span>
+                          {q.options?.[correctAnswer]}
                         </div>
                       </div>
                     </div>

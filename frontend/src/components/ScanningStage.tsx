@@ -30,10 +30,16 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
         const formData = new FormData();
         formData.append('file', quizData.file);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
+
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/extract-topics/`, {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error('Failed to extract topics');
@@ -51,18 +57,34 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
         setExtractionStatus('Topics extracted successfully!');
         
         // Store extracted topics in quiz data
-        setQuizData((prev: any) => ({
-          ...prev,
-          extractedTopics: topicsArray
-        }));
+        console.log('ScanningStage - storing topicsArray:', topicsArray);
+        setQuizData((prev: any) => {
+          const updated = {
+            ...prev,
+            extractedTopics: topicsArray
+          };
+          console.log('ScanningStage - updated quizData:', updated);
+          return updated;
+        });
 
         // Wait a bit to show success message, then proceed
         setTimeout(() => setCurrentStage('topics'), 2000);
         
       } catch (error) {
         console.error('Error extracting topics:', error);
-        setExtractionStatus('Extraction failed, using default topics');
-        toast.error('Failed to extract topics from file. Using default topics.');
+        
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            setExtractionStatus('Extraction timed out, using default topics');
+            toast.error('Topic extraction timed out. Using default topics.');
+          } else {
+            setExtractionStatus('Extraction failed, using default topics');
+            toast.error(`Failed to extract topics: ${error.message}. Using default topics.`);
+          }
+        } else {
+          setExtractionStatus('Extraction failed, using default topics');
+          toast.error('Failed to extract topics from file. Using default topics.');
+        }
         
         // Still proceed to topics stage with empty extracted topics
         setTimeout(() => setCurrentStage('topics'), 2000);
@@ -195,16 +217,7 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
         <canvas ref={canvasRef} className="rounded-full shadow-[0_0_60px_rgba(34,211,238,0.15)]" />
       </div>
 
-      {/* Status message */}
-      <div className="glass-panel-strong p-6 rounded-2xl max-w-md mx-auto mb-8">
-        <div className="text-cyan-400 font-semibold mb-2">Status</div>
-        <div className="text-white">{extractionStatus}</div>
-        {extractedTopics.length > 0 && (
-          <div className="text-slate-400 text-sm mt-2">
-            Found {extractedTopics.length} topics
-          </div>
-        )}
-      </div>
+
 
       {/* Fun tag line (static) */}
       <div className="text-slate-400 text-sm">

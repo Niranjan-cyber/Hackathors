@@ -30,4 +30,4 @@ trap 'echo "🛑 Stopping Ollama models..."; kill $OLLAMA_LLAMA_PID; if type dea
 
 # Start FastAPI backend
 echo "🚀 Starting FastAPI backend..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 300 --timeout-graceful-shutdown 300

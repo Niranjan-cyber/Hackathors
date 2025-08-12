@@ -67,7 +67,18 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
   };
 
   const handleNext = () => {
-    setQuizData({ ...quizData, topics: selectedTopics, presetTopics: false });
+    console.log('TopicsStage handleNext - selectedTopics:', selectedTopics);
+    console.log('TopicsStage handleNext - quizData before:', quizData);
+    
+    const updatedQuizData = { 
+      ...quizData, 
+      topics: selectedTopics, 
+      presetTopics: false,
+      extractedTopics: quizData.extractedTopics // Preserve extractedTopics
+    };
+    
+    console.log('TopicsStage handleNext - updatedQuizData:', updatedQuizData);
+    setQuizData(updatedQuizData);
     setCurrentStage('difficulty');
   };
 
@@ -95,21 +106,7 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
         </p>
       </div>
 
-      {/* Extracted Topics Section */}
-      {extractedTopics.length > 0 && (
-        <div className="mb-8 fade-in-up">
-          <div className="flex items-center gap-3 mb-4">
-            <Sparkles className="w-6 h-6 text-cyan-400" />
-            <h2 className="text-2xl font-bold text-white">AI Extracted Topics</h2>
-            <div className="px-3 py-1 bg-cyan-400/20 text-cyan-400 rounded-full text-sm font-semibold">
-              {extractedTopics.length} found
-            </div>
-          </div>
-          <p className="text-slate-400 mb-4">
-            These topics were automatically identified from your uploaded content.
-          </p>
-        </div>
-      )}
+
 
       {/* Search bar */}
       <div className="max-w-2xl mx-auto mb-8 fade-in-up">

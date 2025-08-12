@@ -12,22 +12,11 @@ interface UploadStageProps {
 const UploadStage: React.FC<UploadStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileSelect = (file: File) => {
     if (file.type === 'application/pdf' || file.type === 'text/plain') {
       setQuizData({ ...quizData, file });
-      
-      // Simulate upload progress
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setCurrentStage('scanning'), 500);
-        }
-      }, 100);
+      setCurrentStage('scanning');
     }
   };
 
@@ -111,21 +100,6 @@ const UploadStage: React.FC<UploadStageProps> = ({ quizData, setQuizData, setCur
               <span>Choose File</span>
               <ArrowRight className="w-5 h-5" />
             </div>
-
-            {/* Progress Bar */}
-            {uploadProgress > 0 && (
-              <div className="mt-8 max-w-md mx-auto">
-                <div className="bg-slate-700/50 rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-cyan-400 text-sm mt-2 font-medium">
-                  Uploading... {uploadProgress}%
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
