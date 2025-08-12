@@ -1,19 +1,13 @@
-# retrieval_pipeline.py
-
 import pickle
 import faiss
 from sentence_transformers import SentenceTransformer
 
-# -----------------------
-# Config / Tunables
-# -----------------------
+# Config
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
-INDEX_PATH = "../rag/vector_store/faiss_index.index"  # Path to FAISS index file
-METADATA_PATH = "../rag/vector_store/chunk_metadata.pkl"  # Path to metadata file
+INDEX_PATH = "../rag/vector_store/index.faiss"  # Path to FAISS index file
+METADATA_PATH = "../rag/vector_store/metadata.pkl"  # Path to metadata file
 
-# -----------------------
 # Difficulty transformation
-# -----------------------
 
 
 def transform_difficulty(difficulty: str) -> str:
@@ -29,9 +23,7 @@ def transform_difficulty(difficulty: str) -> str:
     return mapping.get(difficulty.lower(), difficulty)
 
 
-# -----------------------
 # Query generation
-# -----------------------
 def generate_query(topic: str, difficulty: str, topic_description: str = "") -> str:
     """
     Generate a retrieval query string from topic, description, and difficulty.
@@ -41,9 +33,7 @@ def generate_query(topic: str, difficulty: str, topic_description: str = "") -> 
     return query.strip()
 
 
-# -----------------------
 # Load FAISS and metadata
-# -----------------------
 def load_faiss_index_and_metadata(index_path: str, metadata_path: str):
     """
     Load FAISS index and metadata list from disk.
@@ -51,12 +41,12 @@ def load_faiss_index_and_metadata(index_path: str, metadata_path: str):
     index = faiss.read_index(index_path)
     with open(metadata_path, "rb") as f:
         metadata = pickle.load(f)
+    print(f"The metadata has been extracted: length = {
+          len(metadata["chunks"])}")
     return index, metadata
 
 
-# -----------------------
 # Retrieval
-# -----------------------
 def retrieve_top_k(query: str, index, metadata, k: int, model):
     """
     Retrieve top K chunks for a given query string.
@@ -72,51 +62,54 @@ def retrieve_top_k(query: str, index, metadata, k: int, model):
     return results
 
 
-# -----------------------
 # Group into paragraphs
-# -----------------------
-def group_into_paragraphs(chunks_metadata):
+def group_into_string(chunks_list):
     """
     Combine retrieved chunks into one paragraph each.
     """
+    i = 1
     paragraphs = []
-    for chunk in chunks_metadata:
-        text = chunk.get("text", "").strip()
-        if text:
-            paragraphs.append(text)
-    return paragraphs
+    while i <= len(chunks_list):
+        paragraphs.append(f"### TEXT EXTRACT {i}\n")
+        paragraphs.append(chunks_list[i-1])
+        paragraphs.append("\n\n")
+        i += 1
+    print(paragraphs)
+    string_final = ''.join(paragraphs)
+    return string_final
 
 
-# -----------------------
 # Main pipeline
-# -----------------------
 def main(topic: str, difficulty: str, k: int, topic_description: str = ""):
+    print("RETRIEVAL: Generating query based on the given input")
     # Step 1: Generate query
     query = generate_query(topic, difficulty, topic_description)
 
     # Step 2: Load FAISS index + metadata
+    print("Reading the index and metadata file...")
     index, metadata = load_faiss_index_and_metadata(INDEX_PATH, METADATA_PATH)
 
     # Step 3: Load embedding model
+    print("Loading the embedding model...")
     model = SentenceTransformer(EMBED_MODEL_NAME)
 
     # Step 4: Retrieve top K chunks
-    top_chunks = retrieve_top_k(query, index, metadata, k, model)
+    print(f"Retrieving top {k} chunks...")
+    top_chunks = retrieve_top_k(query, index, metadata["chunks"], k, model)
 
     # Step 5: Group into paragraphs
-    paragraphs = group_into_paragraphs(top_chunks)
+    print("Grouping text...")
+    text = group_into_string(top_chunks)
 
-    # Step 6: Return final context text
-    final_context = "\n\n".join(paragraphs)
-    return final_context
+    return text
 
 
 if __name__ == "__main__":
     # Example usage
-    topic = "Photosynthesis"
-    difficulty = "easy"
-    k = 3
-    topic_description = "The process by which green plants convert sunlight into chemical energy"
+    topic = "Atomic Size"
+    difficulty = "medium"
+    k = 2
+    topic_description = "Trends in the different atomic sizes of transition elements"
 
     context_text = main(topic, difficulty, k, topic_description)
     print("=== Retrieved Context ===")
