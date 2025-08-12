@@ -7,13 +7,13 @@ from sentence_transformers import SentenceTransformer
 
 
 EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-# mapping id -> chunk_text & other metadata
-METADATA_PATH = "faiss_metadata.json"
+# mapping id -> chunk_text & other metadata (kept inside the same pickle we already save)
 
 
-# CONFIGURATION
-OCR_FILE_PATH = "../mcq_generation/OCR_text.txt"  # Input OCR text file
-DB_FAISS_PATH = "vector_store"  # Output folder for FAISS index and metadata
+# CONFIGURATION (resolve to stable paths relative to this file)
+_BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+OCR_FILE_PATH = os.path.join(_BASE_DIR, "..", "mcq_generation", "OCR_text.txt")  # Input OCR text file
+DB_FAISS_PATH = os.path.join(_BASE_DIR, "vector_store")  # Output folder for FAISS index and metadata
 MAX_TOKENS = 240  # safe buffer under 256 for all-MiniLM-L6-v2
 OVERLAP_SENTENCES = 1  # number of sentences to overlap between chunks
 SENTENCE_SPLIT_REGEX = r'(?<=[.!?])\s+'
@@ -167,8 +167,7 @@ def main():
 
     # Step 6: Save index & metadata
     save_faiss_index(index, embeddings, chunks)
-    print(f"Vector database saved to '{
-          DB_FAISS_PATH}' with {len(chunks)} chunks.")
+    print(f"Vector database saved to '{DB_FAISS_PATH}' with {len(chunks)} chunks.")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,13 @@
+import os
 import pickle
 import faiss
 from sentence_transformers import SentenceTransformer
 
-# Config
-EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
-INDEX_PATH = "../rag/vector_store/index.faiss"  # Path to FAISS index file
-METADATA_PATH = "../rag/vector_store/metadata.pkl"  # Path to metadata file
+# Config (resolve paths relative to this file)
+EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+_BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "rag"))
+INDEX_PATH = os.path.join(_BASE_DIR, "vector_store", "index.faiss")
+METADATA_PATH = os.path.join(_BASE_DIR, "vector_store", "metadata.pkl")
 
 # Difficulty transformation
 
@@ -41,8 +43,10 @@ def load_faiss_index_and_metadata(index_path: str, metadata_path: str):
     index = faiss.read_index(index_path)
     with open(metadata_path, "rb") as f:
         metadata = pickle.load(f)
-    print(f"The metadata has been extracted: length = {
-          len(metadata["chunks"])}")
+    try:
+        print(f"The metadata has been extracted: length = {len(metadata.get('chunks', []))}")
+    except Exception:
+        pass
     return index, metadata
 
 
