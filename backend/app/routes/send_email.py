@@ -1,5 +1,6 @@
 import smtplib
-from fastapi import FastAPI, Form, File, UploadFile
+import os
+from fastapi import APIRouter, Form, File, UploadFile
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
@@ -9,12 +10,13 @@ from email import encoders
 
 load_dotenv()
 
-app = FastAPI()
+router = APIRouter()
 
-EMAIL_USER = "email@gamil.com"
-EMAIL_PASS = "pass"
+# Get email credentials from environment variables
+EMAIL_USER = os.getenv("EMAIL_USER", "your-email@gmail.com")
+EMAIL_PASS = os.getenv("EMAIL_PASS", "your-app-password")
 
-@app.post("/send-email")
+@router.post("/send-email")
 async def send_email(
     to: str = Form(...),
     subject: str = Form(...),
@@ -22,6 +24,13 @@ async def send_email(
     file: UploadFile = File(None)
 ):
     try:
+        # Check if email credentials are properly configured
+        if EMAIL_USER == "your-email@gmail.com" or EMAIL_PASS == "your-app-password":
+            return JSONResponse(
+                content={"status": "error", "message": "Email credentials not configured. Please set EMAIL_USER and EMAIL_PASS environment variables."}, 
+                status_code=500
+            )
+        
         # Email setup
         msg = MIMEMultipart()
         msg["From"] = EMAIL_USER
