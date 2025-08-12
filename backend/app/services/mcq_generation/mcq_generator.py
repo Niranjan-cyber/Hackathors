@@ -168,6 +168,7 @@ def main(input_response):
     result = generate_mcqs(
         input_response["difficulty"], input_response["num_questions"], input_response["topics"])
     print(json.dumps(result, indent=2))
+    return result
 
 
 # ENTRY POINT
