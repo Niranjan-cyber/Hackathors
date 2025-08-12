@@ -36,10 +36,10 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
         });
 
         if (response.data && Array.isArray(response.data)) {
-          setQuizData({
-            ...quizData,
+          setQuizData((prev: any) => ({
+            ...prev,
             questions: response.data,
-          });
+          }));
         }
       } catch (err) {
         // Silently ignore; StartingStage will handle waiting if needed
@@ -59,7 +59,7 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
   }, []);
 
   const handleNext = () => {
-    setQuizData({ ...quizData, timeLimit: mode === 'unlimited' ? 0 : timeLimit });
+    setQuizData((prev: any) => ({ ...prev, timeLimit: mode === 'unlimited' ? 0 : timeLimit }));
     setCurrentStage('language');
   };
 

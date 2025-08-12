@@ -28,11 +28,12 @@ const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData, se
   // If translation is pending and questions arrive, translate then proceed
   useEffect(() => {
     const maybeTranslate = async () => {
-      if (quizData.translatePending && Array.isArray(quizData.questions) && quizData.questions.length > 0 && quizData.language && quizData.language !== 'en') {
+      const lang = (quizData.language || '').toLowerCase();
+      if (quizData.translatePending && Array.isArray(quizData.questions) && quizData.questions.length > 0 && lang && lang !== 'en') {
         try {
           const formData = new FormData();
           formData.append('questions', JSON.stringify(quizData.questions));
-          formData.append('target_language', quizData.language);
+          formData.append('target_language', lang);
 
           const response = await axios.post('http://localhost:8000/translate-questions/', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },

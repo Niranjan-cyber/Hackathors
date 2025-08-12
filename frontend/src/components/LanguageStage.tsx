@@ -35,8 +35,8 @@ const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, se
   const handleContinue = async () => {
     const languageCode = (selected || '').trim().toLowerCase();
 
-    // Persist language choice immediately
-    setQuizData({ ...quizData, language: languageCode });
+    // Persist language choice immediately (functional update)
+    setQuizData((prev: any) => ({ ...prev, language: languageCode }));
 
     const needsTranslation = languageCode !== '' && languageCode !== 'en';
 
@@ -55,25 +55,23 @@ const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, se
           });
 
           if (response.data && Array.isArray(response.data)) {
-            setQuizData({
-              ...quizData,
+            setQuizData((prev: any) => ({
+              ...prev,
               language: languageCode,
               questions: response.data,
               translatePending: false,
-            });
+            }));
           }
         } catch (err) {
           // Translation failed; continue with original questions
         }
       } else {
         // Mark translation pending to perform when questions arrive
-        setQuizData({ ...quizData, language: languageCode, translatePending: true });
+        setQuizData((prev: any) => ({ ...prev, language: languageCode, translatePending: true }));
       }
     } else {
       // English selected; ensure no pending flag
-      if (quizData.translatePending) {
-        setQuizData({ ...quizData, language: languageCode, translatePending: false });
-      }
+      setQuizData((prev: any) => ({ ...prev, language: languageCode, translatePending: false }));
     }
 
     setCurrentStage('starting');

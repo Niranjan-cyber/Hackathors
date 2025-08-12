@@ -14,7 +14,7 @@ except KeyError:
 
 def translate_text(text, target_language="en"):
     """Translate a single text using Gemini."""
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     prompt = f"""
     Translate the following text to {target_language}. 

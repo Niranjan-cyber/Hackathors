@@ -2,13 +2,7 @@ import asyncio
 import time
 from fastapi import APIRouter, HTTPException, Form
 import json
-import sys
-import os
 from app.services.mcq_generation import mcq_generator
-
-# Add the translator service to the path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'services', 'translator'))
-from translator import batch_translate_texts
 
 
 # --- Router Initialization ---
@@ -42,12 +36,12 @@ def generate_questions(
     topics: str = Form(...),         # JSON string or comma-separated
     difficulty: str = Form(...),
     num_questions: int = Form(...),
-    language: str = Form(default="en")  # Language code, default to English
 ):
     """
     Generates and returns a list of questions by calling the local MCQ generation model.
     Uses the text previously extracted from the PDF and stored in OCR_text.txt.
-    Accepts only topics, difficulty, and num_questions as form data.
+    Accepts only topics, difficulty, and num_questions as form data. Translation is handled
+    by a separate endpoint.
 
     Response: List of question objects, each with:
       - question: str
@@ -97,52 +91,6 @@ def generate_questions(
         
         if isinstance(generated_questions, list) and generated_questions:
             log(f"Successfully generated {len(generated_questions)} questions from the local model.")
-            
-            # Only translate if language is not English
-            if language.lower() != "en":
-                log(f"Translating questions to {language}")
-                try:
-                    # Collect all texts for batch translation
-                    all_texts = []
-                    for question in generated_questions:
-                        all_texts.append(question.get("question", ""))
-                        options = question.get("options", {})
-                        for key in ["A", "B", "C", "D"]:
-                            if key in options:
-                                all_texts.append(options[key])
-                        if "explanation" in question:
-                            all_texts.append(question["explanation"])
-                    
-                    # Translate all texts in batch
-                    translated_texts = batch_translate_texts(all_texts, language)
-                    
-                    if translated_texts:
-                        # Rebuild questions with translated text
-                        text_idx = 0
-                        for question in generated_questions:
-                            question["question"] = translated_texts[text_idx]
-                            text_idx += 1
-                            
-                            # Translate options
-                            options = question.get("options", {})
-                            for key in ["A", "B", "C", "D"]:
-                                if key in options and text_idx < len(translated_texts):
-                                    options[key] = translated_texts[text_idx]
-                                    text_idx += 1
-                            
-                            # Translate explanation
-                            if "explanation" in question and text_idx < len(translated_texts):
-                                question["explanation"] = translated_texts[text_idx]
-                                text_idx += 1
-                        
-                        log(f"Successfully translated questions to {language}")
-                    else:
-                        log(f"Translation failed for language {language}, returning original questions")
-                except Exception as e:
-                    log(f"Translation error: {e}, returning original questions")
-            else:
-                log("Language is English, skipping translation")
-            
             return generated_questions
         else:
             log(f"Model returned an invalid or empty response: {generated_questions}")
