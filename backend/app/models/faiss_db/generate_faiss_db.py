@@ -12,7 +12,7 @@ METADATA_PATH = "faiss_metadata.json"
 
 
 # CONFIGURATION
-OCR_FILE_PATH = "OCR_text.txt"  # Input OCR text file
+OCR_FILE_PATH = "../mcq_generation/OCR_text.txt"  # Input OCR text file
 DB_FAISS_PATH = "vector_store"  # Output folder for FAISS index and metadata
 MAX_TOKENS = 240  # safe buffer under 256 for all-MiniLM-L6-v2
 OVERLAP_SENTENCES = 1  # number of sentences to overlap between chunks
