@@ -3,7 +3,7 @@ import requests
 import json
 import time
 import random
-from retrieval import main as retrieve_context
+from .retrieval import main as retrieve_context
 
 
 # Input response format:
@@ -108,7 +108,8 @@ def generate_mcqs(difficulty, num_questions, topic_dict):
     topic_dict: dict in format {topic: description}
     """
     # Distribute questions evenly
-    topics = list(topic_dict.keys())
+    # topics = list(topic_dict.keys())
+    topics = topic_dict  # A very very very temporary change
     questions_per_topic = num_questions // len(topics)
     remainder = num_questions % len(topics)  # to handle uneven
     all_questions = []
