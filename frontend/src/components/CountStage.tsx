@@ -21,7 +21,11 @@ const CountStage: React.FC<CountStageProps> = ({ quizData, setQuizData, setCurre
   };
 
   const handleNext = () => {
-    setQuizData({ ...quizData, count: questionCount });
+    setQuizData({ 
+      ...quizData, 
+      count: questionCount,
+      retakeMode: quizData.retakeMode // Preserve retakeMode
+    });
     setCurrentStage('timer');
   };
 

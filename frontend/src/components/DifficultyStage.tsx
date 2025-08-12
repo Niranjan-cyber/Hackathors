@@ -97,7 +97,11 @@ const DifficultyStage: React.FC<DifficultyStageProps> = ({ quizData, setQuizData
   ];
 
   const handleNext = () => {
-    setQuizData({ ...quizData, difficulty: selectedDifficulty });
+    setQuizData({ 
+      ...quizData, 
+      difficulty: selectedDifficulty,
+      retakeMode: quizData.retakeMode // Preserve retakeMode
+    });
     setCurrentStage('count');
   };
 

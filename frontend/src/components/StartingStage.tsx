@@ -8,15 +8,50 @@ interface StartingStageProps {
   setCurrentStage: (stage: any) => void;
 }
 
-const StartingStage: React.FC<StartingStageProps> = ({ quizData, setCurrentStage }) => {
+const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Check if questions are ready and proceed to test
   useEffect(() => {
-    const checkQuestionsAndProceed = () => {
-      // If questions are ready, proceed to test after a short delay
+    const checkQuestionsAndProceed = async () => {
+      // If questions are ready, check if translation is needed
       if (quizData.questions && quizData.questions.length > 0) {
-        console.log('Questions ready, proceeding to test');
+        console.log('Questions ready, checking if translation is needed');
+        console.log('Current language:', quizData.language);
+        
+        // If language is not English, translate the questions
+        if (quizData.language && quizData.language !== 'en') {
+          try {
+            console.log('Translating questions to:', quizData.language);
+            
+            const formData = new FormData();
+            formData.append('questions', JSON.stringify(quizData.questions));
+            formData.append('target_language', quizData.language);
+            
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/translate-questions/`, {
+              method: 'POST',
+              body: formData,
+            });
+            
+            if (response.ok) {
+              const translatedQuestions = await response.json();
+              console.log('Questions translated successfully:', translatedQuestions.length);
+              
+              // Update quiz data with translated questions
+              setQuizData((prev: any) => ({
+                ...prev,
+                questions: translatedQuestions
+              }));
+            } else {
+              console.error('Translation failed, continuing with English questions');
+            }
+          } catch (error) {
+            console.error('Error translating questions:', error);
+            // Continue with English questions if translation fails
+          }
+        }
+        
+        // Proceed to test after a short delay
         setTimeout(() => setCurrentStage('test'), 3000); // 3 second delay for "Get Ready" page
       } else {
         console.log('Questions not ready yet, waiting...');
@@ -26,7 +61,7 @@ const StartingStage: React.FC<StartingStageProps> = ({ quizData, setCurrentStage
     };
 
     checkQuestionsAndProceed();
-  }, [quizData.questions, setCurrentStage]);
+  }, [quizData.questions, quizData.language, setCurrentStage, setQuizData]);
 
   // Full-screen aurora ribbons animation
   useEffect(() => {
@@ -152,6 +187,8 @@ const StartingStage: React.FC<StartingStageProps> = ({ quizData, setCurrentStage
       </div>
     );
   }
+
+
 
   return (
     <div className="relative min-h-screen">

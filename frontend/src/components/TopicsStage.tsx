@@ -74,7 +74,8 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
       ...quizData, 
       topics: selectedTopics, 
       presetTopics: false,
-      extractedTopics: quizData.extractedTopics // Preserve extractedTopics
+      extractedTopics: quizData.extractedTopics, // Preserve extractedTopics
+      retakeMode: quizData.retakeMode // Preserve retakeMode
     };
     
     console.log('TopicsStage handleNext - updatedQuizData:', updatedQuizData);

@@ -21,12 +21,24 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
     { minutes: 45, label: 'Extended', desc: 'No pressure' }
   ];
 
-  // Generate questions from backend when component mounts
+
+
+  // Generate questions from backend when component mounts or when retaking quiz
   useEffect(() => {
+    console.log('TimerStage useEffect triggered with:', {
+      topics: quizData.topics,
+      difficulty: quizData.difficulty,
+      count: quizData.count,
+      language: quizData.language,
+      retakeMode: quizData.retakeMode
+    });
+    
     const generateQuestions = async () => {
-      // Only generate if questions don't exist and we haven't started yet
-      if (quizData.questions && quizData.questions.length > 0) {
-        console.log('Questions already exist, skipping generation');
+      // Check if we need to generate new questions (either no questions exist or we're retaking)
+      const shouldGenerate = !quizData.questions || quizData.questions.length === 0 || quizData.retakeMode;
+
+      if (!shouldGenerate) {
+        console.log('Questions already exist and not in retake mode, skipping generation');
         return;
       }
 
@@ -36,6 +48,9 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
       }
 
       console.log('Starting question generation...');
+      console.log('Current quizData:', quizData);
+      console.log('Selected language:', quizData.language);
+      console.log('Language type:', typeof quizData.language);
       setHasStartedGeneration(true);
 
       try {
@@ -43,6 +58,7 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
         formData.append('topics', JSON.stringify(quizData.topics));
         formData.append('difficulty', quizData.difficulty);
         formData.append('num_questions', quizData.count.toString());
+        formData.append('language', 'en'); // Always generate in English first
 
         console.log('Sending API request...');
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/generate-questions/`, {
@@ -59,7 +75,12 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
         const generatedQuestions = await response.json();
         console.log('Questions generated successfully:', generatedQuestions.length);
         
-        setQuizData((prev: any) => ({ ...prev, questions: generatedQuestions }));
+        // Store questions in English (translation will happen in StartingStage if needed)
+        setQuizData((prev: any) => ({ 
+          ...prev, 
+          questions: generatedQuestions,
+          retakeMode: false // Reset retake mode after generating questions
+        }));
       } catch (error) {
         console.error('Error generating questions:', error);
         
@@ -74,7 +95,7 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
     };
 
     generateQuestions();
-  }, []); // Run only once when component mounts
+  }, [quizData.topics, quizData.difficulty, quizData.count, quizData.language, quizData.retakeMode]); // Run when these values change
 
   const handleNext = () => {
     setQuizData({ ...quizData, timeLimit: mode === 'unlimited' ? 0 : timeLimit });

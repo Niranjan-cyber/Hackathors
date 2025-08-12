@@ -21,6 +21,8 @@ const LANGUAGES: Array<{ code: string; name: string; native?: string; gradient: 
 ];
 
 const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
+  console.log('LanguageStage - quizData received:', quizData);
+  console.log('LanguageStage - quizData.language:', quizData.language);
   const [selected, setSelected] = useState<string>(quizData.language || '');
 
   useEffect(() => {
@@ -32,6 +34,8 @@ const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, se
   }, [selected]);
 
   const handleContinue = () => {
+    console.log('LanguageStage - selected language:', selected);
+    console.log('LanguageStage - setting quizData.language to:', selected);
     setQuizData({ ...quizData, language: selected });
     setCurrentStage('starting');
   };
@@ -41,7 +45,12 @@ const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, se
   };
 
   const handleSelect = (code: string) => {
-    setSelected(prev => (prev === code ? '' : code));
+    console.log('LanguageStage - handleSelect called with code:', code);
+    setSelected(prev => {
+      const newValue = prev === code ? '' : code;
+      console.log('LanguageStage - setting selected to:', newValue);
+      return newValue;
+    });
   };
 
   return (
@@ -104,7 +113,11 @@ const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, se
             <span>Back</span>
           </button>
 
-          <button onClick={handleContinue} disabled={!selected} className={`premium-button px-8 py-4 flex items-center space-x-3 ${!selected ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          <button 
+            onClick={handleContinue} 
+            disabled={!selected} 
+            className={`premium-button px-8 py-4 flex items-center space-x-3 ${!selected ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             <span>Continue</span>
             <ArrowRight className="w-5 h-5" />
           </button>

@@ -5,14 +5,13 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Load environment variables from a .env file
-load_dotenv("api.env")
+load_dotenv()
 
 # Configure the API key from environment variables
 try:
     genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 except KeyError:
-    print("Error: The 'GOOGLE_API_KEY' environment variable is not set.")
-    exit()
+    print("Warning: The 'GOOGLE_API_KEY' environment variable is not set.")
 
 def generate_mcqs(topic, num_questions=3):
     """
@@ -34,8 +33,10 @@ def generate_mcqs(topic, num_questions=3):
     Provide the output in a JSON array format. Each object in the array must have the following structure:
     {{
       "question": "The question text.",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "answer": "The correct answer as a full string, e.g., 'Option C'."
+      "options": {{"A": "Option A text", "B": "Option B text", "C": "Option C text", "D": "Option D text"}},
+      "correct_answer": "A",
+      "topics": ["{topic}"],
+      "explanation": "Brief explanation of why this answer is correct."
     }}
     
     The output must be a valid JSON string, and nothing else.

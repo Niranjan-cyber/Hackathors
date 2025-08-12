@@ -73,18 +73,18 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   };
 
   const handleRetakeSameTopics = () => {
-    const uniqueTopics = Array.from(new Set((quizData.questions || []).map((q: any) => q.topic).filter(Boolean)));
-    const topicsToUse = uniqueTopics.length === 0 && Array.isArray(quizData.extractedTopics) ? quizData.extractedTopics : uniqueTopics;
+    // Use the originally selected topics from the previous quiz
+    const topicsToUse = quizData.topics || quizData.extractedTopics || [];
     
-    console.log('ResultsStage handleRetakeSameTopics - uniqueTopics:', uniqueTopics);
     console.log('ResultsStage handleRetakeSameTopics - topicsToUse:', topicsToUse);
     console.log('ResultsStage handleRetakeSameTopics - quizData before:', quizData);
     
     const updatedQuizData = { 
       ...quizData, 
       topics: topicsToUse, 
-      presetTopics: true,
-      extractedTopics: quizData.extractedTopics // Explicitly preserve
+      presetTopics: true, // This will pre-select the topics in the TopicsStage
+      extractedTopics: quizData.extractedTopics, // Explicitly preserve
+      retakeMode: true // Set retake mode to trigger new question generation
     };
     
     console.log('ResultsStage handleRetakeSameTopics - updatedQuizData:', updatedQuizData);
@@ -92,7 +92,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
     setCurrentStage('topics');
   };
 
-  const handleRetakeFailedTopics = () => {
+  const handleRetakeFailedTopics = async () => {
     const failed = topicStats.filter(t => t.percent < 50).map(t => t.topic);
     if (failed.length === 0) {
       toast('No failed topics (<50%)', { icon: '✅', duration: 1500 });
@@ -102,15 +102,58 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
     console.log('ResultsStage handleRetakeFailedTopics - failed:', failed);
     console.log('ResultsStage handleRetakeFailedTopics - quizData before:', quizData);
     
-    const updatedQuizData = { 
-      ...quizData, 
-      topics: failed,
-      extractedTopics: quizData.extractedTopics // Explicitly preserve
-    };
-    
-    console.log('ResultsStage handleRetakeFailedTopics - updatedQuizData:', updatedQuizData);
-    setQuizData(updatedQuizData);
-    setCurrentStage('difficulty');
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading('Generating questions for failed topics...');
+      
+      // Call the failed topics API
+      const formData = new FormData();
+      formData.append('failed_topics', JSON.stringify(failed));
+      formData.append('num_questions_per_topic', '3'); // Generate 3 questions per failed topic
+      
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/generate-failed-topics-questions/`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const generatedQuestions = await response.json();
+      console.log('Failed topics questions generated successfully:', generatedQuestions.length);
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      toast.success(`Generated ${generatedQuestions.length} questions for failed topics!`);
+      
+      const updatedQuizData = { 
+        ...quizData, 
+        topics: failed,
+        questions: generatedQuestions, // Use the newly generated questions
+        extractedTopics: quizData.extractedTopics, // Explicitly preserve
+        retakeMode: true // Set retake mode for consistency
+      };
+      
+      console.log('ResultsStage handleRetakeFailedTopics - updatedQuizData:', updatedQuizData);
+      setQuizData(updatedQuizData);
+      setCurrentStage('test'); // Go directly to test stage since we have questions
+      
+    } catch (error) {
+      console.error('Error generating failed topics questions:', error);
+      toast.error('Failed to generate questions for failed topics. Please try again.');
+      
+      // Fallback to original behavior
+      const updatedQuizData = { 
+        ...quizData, 
+        topics: failed,
+        extractedTopics: quizData.extractedTopics, // Explicitly preserve
+        retakeMode: true // Set retake mode to trigger new question generation
+      };
+      
+      setQuizData(updatedQuizData);
+      setCurrentStage('difficulty');
+    }
   };
 
   const handleEmailResults = () => setShowEmailModal(true);

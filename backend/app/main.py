@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import extract_topics
 from app.routes import generate_questions
 from app.routes import send_email
+from app.routes import failed_topics
+from app.routes import translate
 
 app = FastAPI()
 
@@ -19,3 +21,5 @@ app.add_middleware(
 app.include_router(extract_topics.router)
 app.include_router(generate_questions.router)
 app.include_router(send_email.router)
+app.include_router(failed_topics.router)
+app.include_router(translate.router)
