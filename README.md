@@ -1,4 +1,4 @@
-# Hackathors - AI-Powered MCQ Generator
+# Hackathors - LLM-Powered MCQ Generator
 
 An intelligent web application that automatically generates Multiple Choice Questions (MCQs) from PDF documents using AI. Built for the PISB Hackathon, this tool helps educators and students create practice tests from their study materials.
 
@@ -146,23 +146,44 @@ Parameters:
 - num_questions: integer (1-50)
 ```
 
-## 📸 Screenshots
+### Application Screens
 
-*Screenshots will be added here to showcase the application interface and user experience.*
+- **Home**
 
-### Application Flow
-- **File Upload Interface**
-- **Topic Selection Screen**
-- **Test Configuration**
+  ![Home page](docs/screenshots/home_page.jpeg)
+
+- **Topic Selection**
+
+  ![Topic selection](docs/screenshots/topic_selection.jpeg)
+
+- **Difficulty Selection**
+
+  ![Difficulty selection](docs/screenshots/difficulty_selection.jpeg)
+
+- **Question Count Selection**
+
+  ![Number of questions selection](docs/screenshots/number_of_question.jpeg)
+
+- **Timer Selection**
+
+  ![Timer selection](docs/screenshots/timer_selection.jpeg)
+
 - **Question Interface**
+
+  ![Question 1](docs/screenshots/question1.jpeg)
+  ![Question 2](docs/screenshots/question2.jpeg)
+  ![Question 3](docs/screenshots/question3.jpeg)
+
 - **Results Display**
 
-*Note: Screenshots will be updated as the application evolves.*
+  ![Results display](docs/screenshots/result.jpeg)
 
 
 ### Project Structure
 ```
 Hackathors/
+├── docs/
+│   └── screenshots/               # README images
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI application
