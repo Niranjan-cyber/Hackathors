@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowRight, Tag, Check, Brain, Search, Plus } from 'lucide-react';
 
 interface TopicsStageProps {
@@ -9,7 +9,11 @@ interface TopicsStageProps {
 }
 
 const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
-  const baseTopics = [
+  // Use real topics from API call, fallback to empty array if none
+  const apiTopics = quizData.topics || [];
+  
+  // Combine API topics with some fallback topics if API returns empty
+  const baseTopics = apiTopics.length > 0 ? apiTopics : [
     'Data Structures', 'Algorithms', 'Database Design', 'Software Engineering',
     'Computer Networks', 'Operating Systems', 'Machine Learning', 'Web Development',
     'Mobile Development', 'Cloud Computing', 'Cybersecurity', 'DevOps',
@@ -17,9 +21,17 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
   ];
 
   const [allTopics, setAllTopics] = useState<string[]>(baseTopics);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>(quizData.presetTopics ? (quizData.topics || []) : []);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [customTopic, setCustomTopic] = useState('');
+
+  // Update topics when quizData.topics changes (from API call)
+  useEffect(() => {
+    if (apiTopics.length > 0) {
+      setAllTopics(apiTopics);
+      // Don't auto-select API topics - let user choose which ones they want
+    }
+  }, [apiTopics]);
 
   const filteredTopics = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -61,7 +73,10 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
           Select Topics
         </h1>
         <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-          Choose the topics you want to focus on. Our AI has identified these key areas from your content.
+          {apiTopics.length > 0 
+            ? "Choose the topics you want to focus on. Our AI has identified these key areas from your content."
+            : "Choose the topics you want to focus on. You can select from our curated list or add custom topics."
+          }
         </p>
       </div>
 

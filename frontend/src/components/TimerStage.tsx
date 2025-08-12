@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Clock, Timer, Infinity } from 'lucide-react';
+import axios from 'axios';
 
 interface TimerStageProps {
   quizData: any;
@@ -12,6 +13,7 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
   const [timeLimit, setTimeLimit] = useState(quizData.timeLimit && quizData.timeLimit > 0 ? quizData.timeLimit : 30);
   const [customTimeInput, setCustomTimeInput] = useState<string>(String(quizData.timeLimit && quizData.timeLimit > 0 ? quizData.timeLimit : 30));
   const [mode, setMode] = useState<'timed' | 'custom' | 'unlimited'>(quizData.timeLimit === 0 ? 'unlimited' : 'timed');
+  const hasRequestedRef = useRef(false);
 
   const timePresets = [
     { minutes: 10, label: 'Quick', desc: 'Speed challenge' },
@@ -19,6 +21,42 @@ const TimerStage: React.FC<TimerStageProps> = ({ quizData, setQuizData, setCurre
     { minutes: 30, label: 'Relaxed', desc: 'Thoughtful answers' },
     { minutes: 45, label: 'Extended', desc: 'No pressure' }
   ];
+
+  // Trigger question generation once when TimerStage loads
+  useEffect(() => {
+    const generateQuestions = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('topics', JSON.stringify(quizData.topics));
+        formData.append('difficulty', quizData.difficulty || 'medium');
+        formData.append('num_questions', (quizData.count ?? 10).toString());
+
+        const response = await axios.post('http://localhost:8000/generate-questions/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.data && Array.isArray(response.data)) {
+          setQuizData({
+            ...quizData,
+            questions: response.data,
+          });
+        }
+      } catch (err) {
+        // Silently ignore; StartingStage will handle waiting if needed
+        // console.error('Error generating questions:', err);
+      }
+    };
+
+    if (!hasRequestedRef.current) {
+      hasRequestedRef.current = true;
+      // Only call if we don't already have questions and required inputs exist
+      const hasInputs = Array.isArray(quizData.topics) && quizData.topics.length > 0 && !!quizData.difficulty && !!quizData.count;
+      if (!quizData.questions || quizData.questions.length === 0) {
+        if (hasInputs) generateQuestions();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNext = () => {
     setQuizData({ ...quizData, timeLimit: mode === 'unlimited' ? 0 : timeLimit });

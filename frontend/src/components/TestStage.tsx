@@ -14,19 +14,50 @@ const TestStage: React.FC<TestStageProps> = ({ quizData, setQuizData, setCurrent
   const [timeRemaining, setTimeRemaining] = useState(quizData.timeLimit * 60);
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
 
-  // Mock questions based on quiz data
-  const questions = Array.from({ length: quizData.count }, (_, i) => ({
-    id: `q${i + 1}`,
-    question: `Question ${i + 1}: Which of the following best describes ${quizData.topics[i % quizData.topics.length]}?`,
-    options: [
-      `Option A for ${quizData.topics[i % quizData.topics.length]}`,
-      `Option B for ${quizData.topics[i % quizData.topics.length]}`,
-      `Option C for ${quizData.topics[i % quizData.topics.length]}`,
-      `Option D for ${quizData.topics[i % quizData.topics.length]}`
-    ],
-    correctAnswer: Math.floor(Math.random() * 4),
-    topic: quizData.topics[i % quizData.topics.length]
-  }));
+  // Build questions from backend if available, else fallback to mock
+  const backendQuestions: any[] = Array.isArray(quizData.questions) ? quizData.questions : [];
+  const questions = backendQuestions.length > 0
+    ? backendQuestions.map((q: any, idx: number) => {
+        // Normalize options to ordered array [A, B, C, D]
+        let optionsArray: string[] = [];
+        if (Array.isArray(q.options)) {
+          optionsArray = q.options;
+        } else if (q.options && typeof q.options === 'object') {
+          const order = ['A', 'B', 'C', 'D'];
+          optionsArray = order.map(k => q.options[k]).filter((v: any) => typeof v === 'string');
+        }
+        // Derive numeric correct answer index
+        let correctIndex = 0;
+        if (typeof q.correctAnswer === 'number') {
+          correctIndex = q.correctAnswer;
+        } else if (typeof q.correct_answer === 'string') {
+          const map: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+          correctIndex = map[q.correct_answer.toUpperCase()] ?? 0;
+        }
+        // Topic can be string or list
+        const topic = Array.isArray(q.topics) ? (q.topics[0] || 'General') : (q.topic || q.topics || 'General');
+        return {
+          id: q.id || `q${idx + 1}`,
+          question: q.question,
+          options: optionsArray,
+          correctAnswer: correctIndex,
+          topic,
+          explanation: q.explanation || '',
+        };
+      })
+    : Array.from({ length: quizData.count }, (_, i) => ({
+        id: `q${i + 1}`,
+        question: `Question ${i + 1}: Which of the following best describes ${quizData.topics[i % quizData.topics.length]}?`,
+        options: [
+          `Option A for ${quizData.topics[i % quizData.topics.length]}`,
+          `Option B for ${quizData.topics[i % quizData.topics.length]}`,
+          `Option C for ${quizData.topics[i % quizData.topics.length]}`,
+          `Option D for ${quizData.topics[i % quizData.topics.length]}`
+        ],
+        correctAnswer: Math.floor(Math.random() * 4),
+        topic: quizData.topics[i % quizData.topics.length],
+        explanation: '',
+      }));
 
   useEffect(() => {
     if (quizData.timeLimit > 0) {

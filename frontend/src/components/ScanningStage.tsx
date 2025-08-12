@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Brain } from 'lucide-react';
+import axios from 'axios';
 
 interface ScanningStageProps {
   quizData: any;
@@ -11,14 +12,48 @@ interface ScanningStageProps {
 const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Auto-advance after a short, pleasant animation
+  // Call backend API to extract topics from PDF
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentStage('topics');
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, [setCurrentStage]);
+    const extractTopics = async () => {
+      if (!quizData.file || isProcessing) return;
+      
+      setIsProcessing(true);
+      setError(null);
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', quizData.file);
+        
+        const response = await axios.post('http://localhost:8000/extract-topics/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        if (response.data && response.data.topics) {
+          setQuizData({ ...quizData, topics: response.data.topics });
+          setCurrentStage('topics');
+        } else {
+          throw new Error('Invalid response format from server');
+        }
+      } catch (err: any) {
+        console.error('Error extracting topics:', err);
+        setError(err.response?.data?.detail || err.message || 'Failed to extract topics');
+        
+        // Auto-advance to topics stage after error (fallback)
+        setTimeout(() => {
+          setCurrentStage('topics');
+        }, 3000);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    extractTopics();
+  }, [quizData.file, setQuizData, setCurrentStage, isProcessing]);
 
   // Radar canvas animation (static, not tied to model)
   useEffect(() => {
@@ -132,8 +167,18 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
           </h1>
         </div>
         <p className="mt-2 text-lg md:text-xl text-slate-300 max-w-2xl mx-auto pb-1">
-          Relax while we prepare your interactive quiz experience.
+          {isProcessing 
+            ? 'Extracting topics from your PDF...' 
+            : error 
+              ? 'Processing completed with some issues' 
+              : 'Relax while we prepare your interactive quiz experience.'
+          }
         </p>
+        {error && (
+          <p className="mt-2 text-sm text-red-400 max-w-2xl mx-auto">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Radar animation */}
@@ -141,9 +186,12 @@ const ScanningStage: React.FC<ScanningStageProps> = ({ quizData, setQuizData, se
         <canvas ref={canvasRef} className="rounded-full shadow-[0_0_60px_rgba(34,211,238,0.15)]" />
       </div>
 
-      {/* Fun tag line (static) */}
+      {/* Fun tag line (dynamic) */}
       <div className="text-slate-400 text-sm">
-        Tip: Hover around while the scanner sweeps — it looks cooler than it needs to.
+        {isProcessing 
+          ? 'Processing your document... this may take a few moments.'
+          : 'Tip: Hover around while the scanner sweeps — it looks cooler than it needs to.'
+        }
       </div>
     </div>
   );

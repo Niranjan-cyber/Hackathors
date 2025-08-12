@@ -92,11 +92,6 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
   const handleDownloadPDF = () => { toast.success('PDF downloaded successfully!', { duration: 1500 }); };
 
   const optionLabels = ['A', 'B', 'C', 'D'];
-  const generateExplanation = (question: any, correctIndex: number) => {
-    const topic = question.topic || 'the topic';
-    const correctText = question.options?.[correctIndex] || 'the correct option';
-    return `The correct choice emphasizes key principles of ${topic}. "${correctText}" best matches the definition or behavior asked. Compare it against the distractors — they either partially address the idea, invert cause/effect, or add irrelevant conditions.`;
-  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -287,7 +282,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
                         <div className="text-xs text-slate-400 mb-1">Your Answer</div>
                         <div className="text-slate-200 text-sm">
                           {userIdx === undefined ? <span className="text-slate-400">Not answered</span> : (<>
-                            <span className="font-semibold text-slate-300 mr-2">{optionLabels[userIdx]}.</span>
+                            <span className="font-semibold text-slate-300 mr-2">{['A','B','C','D'][userIdx]}.</span>
                             {q.options?.[userIdx]}
                           </>)}
                         </div>
@@ -295,14 +290,14 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ quizData, setQuizData, setC
                       <div className="p-4 rounded-xl bg-blue-500/10">
                         <div className="text-xs text-slate-400 mb-1">Correct Answer</div>
                         <div className="text-slate-200 text-sm">
-                          <span className="font-semibold text-slate-300 mr-2">{optionLabels[correctIdx]}.</span>
+                          <span className="font-semibold text-slate-300 mr-2">{['A','B','C','D'][correctIdx]}.</span>
                           {q.options?.[correctIdx]}
                         </div>
                       </div>
                     </div>
                     <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700">
                       <div className="text-xs text-slate-400 mb-1">Explanation</div>
-                      <p className="text-slate-300 text-sm leading-relaxed">{`The correct choice emphasizes key principles of ${q.topic || 'the topic'}.`}</p>
+                      <p className="text-slate-300 text-sm leading-relaxed">{q.explanation || `The correct choice emphasizes key principles of ${q.topic || 'the topic'}.`}</p>
                     </div>
                   </div>
                 );

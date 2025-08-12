@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Globe2, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import InteractiveOrb from './InteractiveOrb';
+import axios from 'axios';
 
 interface LanguageStageProps {
   quizData: any;
@@ -31,8 +32,50 @@ const LanguageStage: React.FC<LanguageStageProps> = ({ quizData, setQuizData, se
     return () => window.removeEventListener('keydown', handleEnter);
   }, [selected]);
 
-  const handleContinue = () => {
-    setQuizData({ ...quizData, language: selected });
+  const handleContinue = async () => {
+    const languageCode = (selected || '').trim().toLowerCase();
+
+    // Persist language choice immediately
+    setQuizData({ ...quizData, language: languageCode });
+
+    const needsTranslation = languageCode !== '' && languageCode !== 'en';
+
+    if (needsTranslation) {
+      const haveQuestions = Array.isArray(quizData.questions) && quizData.questions.length > 0;
+      if (haveQuestions) {
+        try {
+          const formData = new FormData();
+          formData.append('questions', JSON.stringify(quizData.questions));
+          formData.append('target_language', languageCode);
+
+          const response = await axios.post('http://localhost:8000/translate-questions/', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          if (response.data && Array.isArray(response.data)) {
+            setQuizData({
+              ...quizData,
+              language: languageCode,
+              questions: response.data,
+              translatePending: false,
+            });
+          }
+        } catch (err) {
+          // Translation failed; continue with original questions
+        }
+      } else {
+        // Mark translation pending to perform when questions arrive
+        setQuizData({ ...quizData, language: languageCode, translatePending: true });
+      }
+    } else {
+      // English selected; ensure no pending flag
+      if (quizData.translatePending) {
+        setQuizData({ ...quizData, language: languageCode, translatePending: false });
+      }
+    }
+
     setCurrentStage('starting');
   };
 
