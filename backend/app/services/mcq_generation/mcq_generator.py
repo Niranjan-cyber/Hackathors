@@ -122,7 +122,7 @@ def generate_mcqs(difficulty, num_questions, topic_dict):
 
         # Step 1: Retrieve context from FAISS DB
         context_text = retrieve_context(
-            topic, difficulty, chunks_needed, topic_dict[topic])
+            topic, difficulty, chunks_needed, f"Content in given text related to {topic}")
 
         # Step 2: Create prompt for MCQ generation
         prompt_text = prompt_func(
