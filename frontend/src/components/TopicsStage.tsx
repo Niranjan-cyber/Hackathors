@@ -119,51 +119,52 @@ const TopicsStage: React.FC<TopicsStageProps> = ({ quizData, setQuizData, setCur
         </div>
       </div>
 
-      {/* Topics Grid */}
-      <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+      {/* Topics Grid (centered rows with flex-wrap) */}
+      <div className="flex flex-wrap justify-center gap-4 mb-10">
         {filteredTopics.map((topic, index) => {
           const isSelected = selectedTopics.includes(topic);
           return (
-            <div
-              key={topic}
-              onClick={() => toggleTopic(topic)}
-              className={`
-                relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all duration-300 group fade-in-up
-                ${isSelected 
-                  ? 'glass-panel-strong scale-105 neon-glow' 
-                  : 'glass-panel hover:scale-105'
-                }
-              `}
-              style={{ animationDelay: `${index * 0.04}s` }}
-            >
-              {/* Selection Indicator */}
-              <div className={`
-                absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                ${isSelected 
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-400 border-transparent' 
-                  : 'border-slate-500 group-hover:border-cyan-400'
-                }
-              `}>
-                {isSelected && <Check className="w-4 h-4 text-white" />}
-              </div>
-
-              {/* Topic Content */}
-              <div className="pr-8">
-                <h3 className={`
-                  text-lg font-semibold transition-colors duration-300
-                  ${isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'}
+            <div key={topic} className="w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5rem)]">
+              <div
+                onClick={() => toggleTopic(topic)}
+                className={`
+                  relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all duration-300 group fade-in-up
+                  ${isSelected 
+                    ? 'glass-panel-strong scale-105 neon-glow' 
+                    : 'glass-panel hover:scale-105'
+                  }
+                `}
+                style={{ animationDelay: `${index * 0.04}s` }}
+              >
+                {/* Selection Indicator */}
+                <div className={`
+                  absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
+                  ${isSelected 
+                    ? 'bg-gradient-to-r from-cyan-400 to-purple-400 border-transparent' 
+                    : 'border-slate-500 group-hover:border-cyan-400'
+                  }
                 `}>
-                  {topic}
-                </h3>
-              </div>
+                  {isSelected && <Check className="w-4 h-4 text-white" />}
+                </div>
 
-              {/* Hover Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/5 to-purple-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-              
-              {/* Selection Ripple */}
-              {isSelected && (
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 to-purple-400/10 rounded-2xl animate-pulse" />
-              )}
+                {/* Topic Content */}
+                <div className="pr-8">
+                  <h3 className={`
+                    text-lg font-semibold transition-colors duration-300
+                    ${isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'}
+                  `}>
+                    {topic}
+                  </h3>
+                </div>
+
+                {/* Hover Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/5 to-purple-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+                
+                {/* Selection Ripple */}
+                {isSelected && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 to-purple-400/10 rounded-2xl animate-pulse" />
+                )}
+              </div>
             </div>
           );
         })}
