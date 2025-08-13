@@ -151,43 +151,37 @@ Parameters:
 
 ### Application Screens
 
-- **home_page.png**
+- **Home**
 
   ![Home page](docs/screenshots/home_page.png)
 
-- **topic_selection.png**
+- **Topic Selection**
 
   ![Topic selection](docs/screenshots/topic_selection.png)
 
-- **dificulty_selection.png**
+- **Difficulty Selection**
 
   ![Difficulty selection](docs/screenshots/dificulty_selection.png)
 
-- **number_of_questions.png**
+- **Number of Questions**
 
   ![Number of questions selection](docs/screenshots/number_of_questions.png)
 
-- **timer_selection.png**
+- **Timer Selection**
 
   ![Timer selection](docs/screenshots/timer_selection.png)
 
-- **starting**
+- **Starting**
 
   A brief loading screen that immediately moves to the test once questions are ready. (No separate screenshot file.)
 
-- **question1.png**
+- **Question Interface**
 
   ![Question 1](docs/screenshots/question1.png)
-
-- **question2.png**
-
   ![Question 2](docs/screenshots/question2.png)
-
-- **question3.png**
-
   ![Question 3](docs/screenshots/question3.png)
 
-- **results.png**
+- **Results**
 
   ![Results display](docs/screenshots/results.png)
 
