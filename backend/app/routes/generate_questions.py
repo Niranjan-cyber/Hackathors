@@ -1,9 +1,8 @@
 import asyncio
+import time
 from fastapi import APIRouter, HTTPException, Form
 import json
-import sys
-import os
-from app.models.mcq_generation import mcq_generator
+from app.services.mcq_generation import mcq_generator
 
 
 # --- Router Initialization ---
@@ -33,15 +32,16 @@ def validate_input(topics_list: list, difficulty: str, num_questions: int) -> tu
 
 # --- API Endpoint ---
 @router.post("/generate-questions/")
-async def generate_questions(
+def generate_questions(
     topics: str = Form(...),         # JSON string or comma-separated
     difficulty: str = Form(...),
-    num_questions: int = Form(...)
+    num_questions: int = Form(...),
 ):
     """
     Generates and returns a list of questions by calling the local MCQ generation model.
     Uses the text previously extracted from the PDF and stored in OCR_text.txt.
-    Accepts only topics, difficulty, and num_questions as form data.
+    Accepts only topics, difficulty, and num_questions as form data. Translation is handled
+    by a separate endpoint.
 
     Response: List of question objects, each with:
       - question: str
@@ -83,7 +83,11 @@ async def generate_questions(
 
     try:
         log(f"Generating {num_questions} questions for topics: {topics_list} with difficulty: {difficulty}")
+        log(f"Starting MCQ generation at {time.time()}")
+        
         generated_questions = mcq_generator.main(model_input)
+        
+        log(f"MCQ generation completed at {time.time()}")
         
         if isinstance(generated_questions, list) and generated_questions:
             log(f"Successfully generated {len(generated_questions)} questions from the local model.")

@@ -82,3 +82,5 @@ dist-ssr
 
 #OCR_text
 **/OCR_text.txt
+backend/app/services/rag/vector_store/index.faiss
+backend/app/services/rag/vector_store/metadata.pkl

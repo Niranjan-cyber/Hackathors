@@ -22,6 +22,7 @@ This project consists of two main components:
 - **FastAPI** server for RESTful API endpoints
 - **PDF Processing** using PyMuPDF for text extraction
 - **AI Models** using Ollama (phi3 and llama3.1) for topic extraction and MCQ generation
+ - **RAG**: FAISS vector store built from OCR text to ground MCQ generation
 
 ### Frontend (React + TypeScript)
 - **React 18** with TypeScript for type safety
@@ -30,6 +31,8 @@ This project consists of two main components:
 - **Shadcn/ui** components for modern UI
 - **React Router** for navigation
 - **React Query** for API state management
+
+Note: Translation has been removed. The app now goes directly from Timer → Starting → Test after question generation.
 
 ## 📋 Prerequisites
 
@@ -150,33 +153,34 @@ Parameters:
 
 - **Home**
 
-  ![Home page](docs/screenshots/home_page.jpeg)
+  ![Home page](docs/screenshots/home_page.png)
 
 - **Topic Selection**
 
-  ![Topic selection](docs/screenshots/topic_selection.jpeg)
+  ![Topic selection](docs/screenshots/topic_selection.png)
 
 - **Difficulty Selection**
 
-  ![Difficulty selection](docs/screenshots/difficulty_selection.jpeg)
+  ![Difficulty selection](docs/screenshots/dificulty_selection.png)
 
-- **Question Count Selection**
+- **Number of Questions**
 
-  ![Number of questions selection](docs/screenshots/number_of_question.jpeg)
+  ![Number of questions selection](docs/screenshots/number_of_questions.png)
 
 - **Timer Selection**
 
-  ![Timer selection](docs/screenshots/timer_selection.jpeg)
+  ![Timer selection](docs/screenshots/timer_selection.png)
+
 
 - **Question Interface**
 
-  ![Question 1](docs/screenshots/question1.jpeg)
-  ![Question 2](docs/screenshots/question2.jpeg)
-  ![Question 3](docs/screenshots/question3.jpeg)
+  ![Question 1](docs/screenshots/question1.png)
+  ![Question 2](docs/screenshots/question2.png)
+  ![Question 3](docs/screenshots/question3.png)
 
-- **Results Display**
+- **Results**
 
-  ![Results display](docs/screenshots/result.jpeg)
+  ![Results display](docs/screenshots/results.png)
 
 
 ### Project Structure
