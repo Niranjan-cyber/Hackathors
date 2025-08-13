@@ -44,8 +44,7 @@ def ollama_prompt(input_dict):
         )
         response.raise_for_status()
         result = response.json()["response"]
-        log(f"Successfully received response in {
-            time.time() - start_time} seconds...")
+        log(f"Successfully received response in {time.time() - start_time} seconds...")
         return result
     except requests.exceptions.HTTPError as http_err:
         log(f"HTTP error occurred: {http_err}")

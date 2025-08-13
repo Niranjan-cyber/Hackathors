@@ -16,7 +16,18 @@ const UploadStage: React.FC<UploadStageProps> = ({ quizData, setQuizData, setCur
 
   const handleFileSelect = (file: File) => {
     if (file.type === 'application/pdf' || file.type === 'text/plain') {
-      setQuizData({ ...quizData, file });
+      // Reset quiz state for a fresh run with the new file
+      setQuizData({
+        file,
+        topics: [],
+        difficulty: 'medium',
+        count: 10,
+        timeLimit: 30,
+        questions: [],
+        answers: {},
+        score: undefined,
+        timeSpent: undefined,
+      });
       
       // Simulate upload progress
       let progress = 0;
