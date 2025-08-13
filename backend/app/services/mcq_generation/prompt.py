@@ -1,4 +1,12 @@
 def prompt_func(text_extract, topic, difficulty, number_of_questions):
+    # Normalize topic for heading and JSON example snippets
+    if isinstance(topic, (list, tuple)):
+        topic_heading = ", ".join(str(t) for t in topic)
+        topics_json = "[" + ", ".join(f'"{str(t)}"' for t in topic) + "]"
+    else:
+        topic_heading = str(topic)
+        topics_json = f'"{str(topic)}"'
+
     promptstr = f"""
 ###
 You are about to be given a text extract.
@@ -20,7 +28,7 @@ Generate a set of {
         number_of_questions
     } high quality multiple-choice questions based on the text extract and the requested topic. Output them in a well-structured JSON array.
 
-### Topic : {topic}
+### Topic : {topic_heading}
 
 ###
 Guidelines for Good MCQs:
@@ -46,7 +54,7 @@ Constraints:
       "D": "..."
     }},
     "correct_answer": "B",
-    "topics": ["{topic}"],
+    "topics": {topics_json},
     "explanation": "..."
   }}
 ]
@@ -78,7 +86,7 @@ Examples of formatted MCQ question array:
       "D": "7 = 8",
     }},
     "correct_answer": "B",
-    "topics": ["Basic Mathematics"],
+    "topics": "Basic Mathematics",
     "explanation": "Option B is the correct answer as the left hand side is equal to the right hand side of the equality. Option A states 2 = 5, which is false. Option C states 10 = 7, which is also false. Option D plainly states a wrong equality.",
   }},
   {{
@@ -90,7 +98,7 @@ Examples of formatted MCQ question array:
       "D": "16"
     }},
     "correct_answer": "C",
-    "topics": ["Basic Mathematics"],
+    "topics": "Basic Mathematics",
     "explanation": "9 + 6 equals 15, so option C is correct. The other options are common mistakes if someone adds incorrectly or forgets carrying over.",
   }}
 ]

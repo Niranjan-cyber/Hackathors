@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Brain } from 'lucide-react';
-import axios from 'axios';
 
 interface StartingStageProps {
   quizData: any;
@@ -9,49 +8,15 @@ interface StartingStageProps {
   setCurrentStage: (stage: any) => void;
 }
 
-const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData, setCurrentStage }) => {
+const StartingStage: React.FC<StartingStageProps> = ({ quizData, setQuizData: _setQuizData, setCurrentStage }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Auto-advance to test after 10s if questions are ready and translation (if any) is done
+  // Immediately advance to test as soon as questions are ready
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Check if questions are ready before proceeding, and not waiting on translation
-      if (quizData.questions && quizData.questions.length > 0 && !quizData.translatePending) {
-        setCurrentStage('test');
-      } else {
-        // If not ready, remain on starting stage
-      }
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, [setCurrentStage, quizData.questions, quizData.translatePending]);
-
-  // If translation is pending and questions arrive, translate then proceed
-  useEffect(() => {
-    const maybeTranslate = async () => {
-      const lang = (quizData.language || '').toLowerCase();
-      if (quizData.translatePending && Array.isArray(quizData.questions) && quizData.questions.length > 0 && lang && lang !== 'en') {
-        try {
-          const formData = new FormData();
-          formData.append('questions', JSON.stringify(quizData.questions));
-          formData.append('target_language', lang);
-
-          const response = await axios.post('http://localhost:8000/translate-questions/', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-
-          if (response.data && Array.isArray(response.data)) {
-            setQuizData({ ...quizData, questions: response.data, translatePending: false });
-          } else {
-            setQuizData({ ...quizData, translatePending: false });
-          }
-        } catch (err) {
-          setQuizData({ ...quizData, translatePending: false });
-        }
-      }
-    };
-
-    maybeTranslate();
-  }, [quizData.translatePending, quizData.questions, quizData.language, setQuizData, quizData]);
+    if (quizData.questions && quizData.questions.length > 0) {
+      setCurrentStage('test');
+    }
+  }, [setCurrentStage, quizData.questions]);
 
   // Full-screen aurora ribbons animation
   useEffect(() => {

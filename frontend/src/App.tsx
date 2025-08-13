@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, Brain, Clock, Target, FileText, Trophy } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Brain } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import UploadStage from './components/UploadStage';
 import ScanningStage from './components/ScanningStage';
@@ -12,10 +12,9 @@ import TestStage from './components/TestStage';
 import ResultsStage from './components/ResultsStage';
 import Background3D from './components/Background3D';
 import CursorOrb from './components/CursorOrb';
-import LanguageStage from './components/LanguageStage';
 import './index.css';
 
-type Stage = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer' | 'language' | 'starting' | 'test' | 'results';
+type Stage = 'upload' | 'scanning' | 'topics' | 'difficulty' | 'count' | 'timer' | 'starting' | 'test' | 'results';
 
 interface QuizData {
   file?: File;
@@ -77,7 +76,6 @@ function App() {
     difficulty: DifficultyStage,
     count: CountStage,
     timer: TimerStage,
-    language: LanguageStage,
     starting: StartingStage,
     test: TestStage,
     results: ResultsStage
@@ -85,7 +83,7 @@ function App() {
 
   const CurrentStageComponent = stageComponents[currentStage];
 
-  const progressStages = ['upload', 'scanning', 'topics', 'difficulty', 'count', 'timer', 'language', 'starting', 'test', 'results'];
+  const progressStages = ['upload', 'scanning', 'topics', 'difficulty', 'count', 'timer', 'starting', 'test', 'results'];
   const currentProgress = progressStages.indexOf(currentStage);
 
   return (

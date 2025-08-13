@@ -22,6 +22,7 @@ This project consists of two main components:
 - **FastAPI** server for RESTful API endpoints
 - **PDF Processing** using PyMuPDF for text extraction
 - **AI Models** using Ollama (phi3 and llama3.1) for topic extraction and MCQ generation
+ - **RAG**: FAISS vector store built from OCR text to ground MCQ generation
 
 ### Frontend (React + TypeScript)
 - **React 18** with TypeScript for type safety
@@ -30,6 +31,8 @@ This project consists of two main components:
 - **Shadcn/ui** components for modern UI
 - **React Router** for navigation
 - **React Query** for API state management
+
+Note: Translation has been removed. The app now goes directly from Timer → Starting → Test after question generation.
 
 ## 📋 Prerequisites
 
@@ -148,33 +151,43 @@ Parameters:
 
 ### Application Screens
 
-- **Home**
+- **home_page.jpeg**
 
   ![Home page](docs/screenshots/home_page.jpeg)
 
-- **Topic Selection**
+- **topic_selection.jpeg**
 
   ![Topic selection](docs/screenshots/topic_selection.jpeg)
 
-- **Difficulty Selection**
+- **difficulty_selection.jpeg**
 
   ![Difficulty selection](docs/screenshots/difficulty_selection.jpeg)
 
-- **Question Count Selection**
+- **number_of_question.jpeg**
 
   ![Number of questions selection](docs/screenshots/number_of_question.jpeg)
 
-- **Timer Selection**
+- **timer_selection.jpeg**
 
   ![Timer selection](docs/screenshots/timer_selection.jpeg)
 
-- **Question Interface**
+- **starting**
+
+  A brief loading screen that immediately moves to the test once questions are ready. (No separate screenshot file.)
+
+- **question1.jpeg**
 
   ![Question 1](docs/screenshots/question1.jpeg)
+
+- **question2.jpeg**
+
   ![Question 2](docs/screenshots/question2.jpeg)
+
+- **question3.jpeg**
+
   ![Question 3](docs/screenshots/question3.jpeg)
 
-- **Results Display**
+- **result.jpeg**
 
   ![Results display](docs/screenshots/result.jpeg)
 
