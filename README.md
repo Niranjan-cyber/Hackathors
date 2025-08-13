@@ -171,9 +171,6 @@ Parameters:
 
   ![Timer selection](docs/screenshots/timer_selection.png)
 
-- **Starting**
-
-  A brief loading screen that immediately moves to the test once questions are ready. (No separate screenshot file.)
 
 - **Question Interface**
 
