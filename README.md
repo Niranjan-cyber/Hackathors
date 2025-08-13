@@ -151,45 +151,45 @@ Parameters:
 
 ### Application Screens
 
-- **home_page.jpeg**
+- **home_page.png**
 
-  ![Home page](docs/screenshots/home_page.jpeg)
+  ![Home page](docs/screenshots/home_page.png)
 
-- **topic_selection.jpeg**
+- **topic_selection.png**
 
-  ![Topic selection](docs/screenshots/topic_selection.jpeg)
+  ![Topic selection](docs/screenshots/topic_selection.png)
 
-- **difficulty_selection.jpeg**
+- **dificulty_selection.png**
 
-  ![Difficulty selection](docs/screenshots/difficulty_selection.jpeg)
+  ![Difficulty selection](docs/screenshots/dificulty_selection.png)
 
-- **number_of_question.jpeg**
+- **number_of_questions.png**
 
-  ![Number of questions selection](docs/screenshots/number_of_question.jpeg)
+  ![Number of questions selection](docs/screenshots/number_of_questions.png)
 
-- **timer_selection.jpeg**
+- **timer_selection.png**
 
-  ![Timer selection](docs/screenshots/timer_selection.jpeg)
+  ![Timer selection](docs/screenshots/timer_selection.png)
 
 - **starting**
 
   A brief loading screen that immediately moves to the test once questions are ready. (No separate screenshot file.)
 
-- **question1.jpeg**
+- **question1.png**
 
-  ![Question 1](docs/screenshots/question1.jpeg)
+  ![Question 1](docs/screenshots/question1.png)
 
-- **question2.jpeg**
+- **question2.png**
 
-  ![Question 2](docs/screenshots/question2.jpeg)
+  ![Question 2](docs/screenshots/question2.png)
 
-- **question3.jpeg**
+- **question3.png**
 
-  ![Question 3](docs/screenshots/question3.jpeg)
+  ![Question 3](docs/screenshots/question3.png)
 
-- **result.jpeg**
+- **results.png**
 
-  ![Results display](docs/screenshots/result.jpeg)
+  ![Results display](docs/screenshots/results.png)
 
 
 ### Project Structure
