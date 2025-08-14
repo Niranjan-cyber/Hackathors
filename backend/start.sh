@@ -17,7 +17,9 @@ fi
 if [ -f requirements.txt ]; then
   echo "📦 Installing Python dependencies..."
   pip install --upgrade pip
-  pip install -r requirements.txt
+	echo "Installing requirements..."
+  pip install -r requirements.txt -q
+	echo "Finished installing requirements :)"
 fi
 
 # Start Ollama models in background
