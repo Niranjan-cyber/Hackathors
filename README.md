@@ -6,13 +6,19 @@ An intelligent web application that automatically generates Multiple Choice Ques
 
 - **PDF Text Extraction**: Automatically extracts text content from uploaded PDF files
 - **Topic Detection**: AI-powered topic extraction from document content
-- **Smart MCQ Generation**: Generates contextually relevant questions using local AI models
+- **Smart MCQ Generation**: Generates contextually relevant questions using AI models
 - **Customizable Difficulty**: Choose from Easy, Medium, and Hard difficulty levels
-- **Flexible Question Count**: Generate 1-50 questions per session
+- **Flexible Question Count**: Generate 5-50 questions per session
 - **Timer Support**: Optional timed test sessions
 - **Interactive Test Interface**: Clean, modern UI for taking generated tests
 - **Instant Results**: Immediate scoring and detailed explanations
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **No Cloud services required**: This project runs locally.
+
+## 🎥 Video Demo
+
+<video src="docs/Hackathors_Demo.mp4" controls muted playsinline style="max-width:100%; height:auto; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.25);"></video>
+
 
 ## 🏗️ Architecture
 
