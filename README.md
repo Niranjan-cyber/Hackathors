@@ -47,14 +47,13 @@ Before running this project, ensure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/Niranjan-cyber/Hackathors.git
 cd Hackathors
 ```
 
 ### 2. Install Ollama Models
 ```bash
 # Install the required AI models
-ollama pull phi3
 ollama pull llama3.1
 ```
 
@@ -76,7 +75,7 @@ This will:
 ```bash
 cd backend
 
-# Create virtual environment (optional but recommended)
+# Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
