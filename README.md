@@ -2,6 +2,9 @@
 
 An intelligent web application that automatically generates Multiple Choice Questions (MCQs) from PDF documents using AI. Built for the PISB Hackathon, this tool helps educators and students create practice tests from their study materials.
 
+## Video Demo
+[Link to the video demo](https://drive.google.com/file/d/1bFPnCFu9koka9pxvCJ-_tLCRlWoD6hhu/view?usp=sharing) 
+
 ## 🚀 Features
 
 - **PDF Text Extraction**: Automatically extracts text content from uploaded PDF files
